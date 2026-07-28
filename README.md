@@ -97,15 +97,15 @@
 ---
 
 
-<video src="https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4" controls width="100%">
+<video src="/docs/video/screen_rec_001.mp4" controls width="100%">
   Your browser does not support the video tag.
 </video>
 
 ---
 
 
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/python-projects.svg?style=social)](https://github.com/yourusername/python-projects)
-[![GitHub forks](https://img.shields.io/github/forks/yourusername/python-projects.svg?style=social)](https://github.com/yourusername/python-projects)
-[![GitHub watchers](https://img.shields.io/github/watchers/yourusername/python-projects.svg?style=social)](https://github.com/yourusername/python-projects)
+[![GitHub stars](https://img.shields.io/github/stars/yourusername/python-projects.svg?style=social)](https://github.com/Gabryelf/Tools-Progs)
+[![GitHub forks](https://img.shields.io/github/forks/yourusername/python-projects.svg?style=social)](https://github.com/Gabryelf/Tools-Progs)
+[![GitHub watchers](https://img.shields.io/github/watchers/yourusername/python-projects.svg?style=social)](https://github.com/Gabryelf/Tools-Progs)
 
 
