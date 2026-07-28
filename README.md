@@ -38,12 +38,27 @@
 - 📁 Автоматическое сохранение на рабочий стол
 - ⚡ Оптимизированная производительность
 
-#### Демонстрация
+### 🎬 Демонстрация работы
 
-<a href="https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4">
-  <img src="https://img.shields.io/badge/▶️_Смотреть_демонстрацию-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo"/>
-</a>
+<div align="center">
+  <a href="https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4?raw=true">
+    <img src="https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-25-47.png?raw=true" 
+         alt="Нажмите для просмотра видео" 
+         width="80%"
+         style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+    <br>
+    <b>▶️ Нажмите на изображение, чтобы скачать/посмотреть видео</b>
+  </a>
+</div>
 
+<details>
+<summary><b>📹 Или скачайте видео напрямую</b></summary>
+
+<br>
+
+[⬇️ Скачать видео (MP4)](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4?raw=true)
+
+</details>
 
 #### Скриншоты
 
@@ -92,14 +107,6 @@
   <sub>Built with ❤️ in Python</sub>
 </div>
 
-
-
----
-
-
-<video src="/docs/video/screen_rec_001.mp4" controls width="100%">
-  Your browser does not support the video tag.
-</video>
 
 ---
 
