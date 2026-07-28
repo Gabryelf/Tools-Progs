@@ -1,0 +1,12 @@
+{
+    "audio_device": null,
+    "audio_sample_rate": 22050,
+    "audio_channels": 2,
+    "record_audio": true,
+    "video_fps": 60,
+    "video_codec": "mp4v",
+    "save_path": "C:\\Users\\elf\\Desktop",
+    "filename_template": "Запись_экрана_{timestamp}",
+    "show_fps": true,
+    "show_preview": false
+}
