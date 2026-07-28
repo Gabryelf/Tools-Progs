@@ -10,16 +10,21 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QLineEdit, QTabWidget)
 from PyQt5.QtCore import Qt, QTimer
 
-# Исправленные импорты - используем абсолютные пути
-from core import ScreenRecorder, SettingsManager
-from gui.styles import MAIN_STYLE
+from core import SettingsManager
+from gui.modern_styles import DARK_STYLE  # Импортируем современные стили
+from gui.drawing_overlay import DrawingOverlay
+from gui.drawing_toolbar import DrawingToolbar
+from core.recorder_with_overlay import RecorderWithOverlay
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.settings = SettingsManager()
-        self.recorder = ScreenRecorder(self.settings)
+        self.recorder = RecorderWithOverlay(self.settings)
+        self.drawing_overlay = None
+        self.drawing_toolbar = None
+        self.drawing_enabled = False
 
         # Подключаем callback'и
         self.recorder.add_callback('on_start', self.on_recording_started)
@@ -30,10 +35,10 @@ class MainWindow(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('🎥 Screen Recorder')
-        self.setGeometry(100, 100, 400, 500)
-        self.setMinimumSize(350, 400)
-        self.setStyleSheet(MAIN_STYLE)
+        self.setWindowTitle('🎥 Screen Recorder Pro')
+        self.setGeometry(100, 100, 450, 550)
+        self.setMinimumSize(400, 450)
+        self.setStyleSheet(DARK_STYLE)  # Используем темную тему
 
         # Центральный виджет
         central_widget = QWidget()
@@ -42,36 +47,38 @@ class MainWindow(QMainWindow):
         central_widget.setLayout(layout)
 
         # Заголовок
-        title = QLabel('🎥 Запись экрана')
+        title = QLabel('🎥 Screen Recorder Pro')
+        title.setObjectName('titleLabel')
         title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet('font-size: 20px; font-weight: bold; color: #2c3e50;')
         layout.addWidget(title)
 
         # Вкладки
         tabs = QTabWidget()
         layout.addWidget(tabs)
 
-        # Вкладка "Запись"
+        # ============ Вкладка "Запись" ============
         record_tab = QWidget()
         record_layout = QVBoxLayout()
         record_tab.setLayout(record_layout)
 
         # Статус
         self.status_label = QLabel('✅ Готов к записи')
-        self.status_label.setAlignment(Qt.AlignCenter)
         self.status_label.setObjectName('statusLabel')
+        self.status_label.setAlignment(Qt.AlignCenter)
+        self.status_label.setProperty('class', 'ready')
         record_layout.addWidget(self.status_label)
 
         # Информация о записи
         self.info_label = QLabel('⏱ 00:00:00 | 📹 0 кадров')
+        self.info_label.setObjectName('infoLabel')
         self.info_label.setAlignment(Qt.AlignCenter)
-        self.info_label.setStyleSheet('color: #666; font-size: 12px;')
         record_layout.addWidget(self.info_label)
 
-        # Кнопки
+        # Кнопки управления
         btn_layout = QHBoxLayout()
 
         self.start_btn = QPushButton('▶ Начать запись')
+        self.start_btn.setObjectName('startBtn')
         self.start_btn.clicked.connect(self.start_recording)
         btn_layout.addWidget(self.start_btn)
 
@@ -82,6 +89,17 @@ class MainWindow(QMainWindow):
         btn_layout.addWidget(self.stop_btn)
 
         record_layout.addLayout(btn_layout)
+
+        # Кнопка рисования
+        draw_layout = QHBoxLayout()
+
+        self.draw_btn = QPushButton('🖍️ Маркер')
+        self.draw_btn.setObjectName('drawBtn')
+        self.draw_btn.clicked.connect(self.toggle_drawing)
+        draw_layout.addWidget(self.draw_btn)
+
+        draw_layout.addStretch()
+        record_layout.addLayout(draw_layout)
 
         # Настройки быстрого доступа
         settings_group = QGroupBox("⚙️ Быстрые настройки")
@@ -99,9 +117,16 @@ class MainWindow(QMainWindow):
         settings_group.setLayout(settings_layout)
         record_layout.addWidget(settings_group)
 
+        # Информация о рисовании
+        self.drawing_info = QLabel('🖍️ Нажмите "Маркер" для активации рисования')
+        self.drawing_info.setAlignment(Qt.AlignCenter)
+        self.drawing_info.setStyleSheet('color: #888; font-size: 11px; padding: 5px;')
+        record_layout.addWidget(self.drawing_info)
+
+        record_layout.addStretch()
         tabs.addTab(record_tab, "🎬 Запись")
 
-        # Вкладка "Настройки"
+        # ============ Вкладка "Настройки" ============
         settings_tab = QWidget()
         settings_layout = QVBoxLayout()
         settings_tab.setLayout(settings_layout)
@@ -145,7 +170,6 @@ class MainWindow(QMainWindow):
         audio_settings_group = QGroupBox("🎵 Настройки звука")
         audio_settings_layout = QVBoxLayout()
 
-        # Частота дискретизации
         sample_layout = QHBoxLayout()
         sample_layout.addWidget(QLabel("Частота (кГц):"))
         self.sample_combo = QComboBox()
@@ -173,16 +197,24 @@ class MainWindow(QMainWindow):
         settings_layout.addStretch()
         tabs.addTab(settings_tab, "⚙️ Настройки")
 
-        # Вкладка "О программе"
+        # ============ Вкладка "О программе" ============
         about_tab = QWidget()
         about_layout = QVBoxLayout()
         about_tab.setLayout(about_layout)
 
         about_text = QLabel("""
-        <h2>🎥 Screen Recorder</h2>
-        <p><b>Версия:</b> 0.0.2</p>
+        <h2>🎥 Screen Recorder Pro</h2>
+        <p><b>Версия:</b> 0.0.3</p>
         <p><b>Автор:</b> Gabryelf</p>
         <p>Запись экрана с системным звуком</p>
+        <p><b>🆕 Новое в версии:</b></p>
+        <ul>
+            <li>✨ Современный темный интерфейс</li>
+            <li>🖍️ Инструмент рисования маркером</li>
+            <li>🎨 Выбор цвета и толщины кисти</li>
+            <li>🧹 Ластик для стирания</li>
+            <li>↩️ Отмена последнего действия</li>
+        </ul>
         <p>Используемые технологии:</p>
         <ul>
             <li>Python 3.10+</li>
@@ -217,7 +249,9 @@ class MainWindow(QMainWindow):
 
         self.stop_btn.setEnabled(False)
         self.status_label.setText('⏳ СОХРАНЕНИЕ...')
-        self.status_label.setStyleSheet('background-color: #ffaa00; color: white;')
+        self.status_label.setProperty('class', 'saving')
+        self.status_label.style().unpolish(self.status_label)
+        self.status_label.style().polish(self.status_label)
 
         self.recorder.stop()
 
@@ -225,7 +259,9 @@ class MainWindow(QMainWindow):
         self.start_btn.setEnabled(False)
         self.stop_btn.setEnabled(True)
         self.status_label.setText('⏺ ИДЕТ ЗАПИСЬ...')
-        self.status_label.setStyleSheet('background-color: #ff4444; color: white;')
+        self.status_label.setProperty('class', 'recording')
+        self.status_label.style().unpolish(self.status_label)
+        self.status_label.style().polish(self.status_label)
 
     def on_recording_stopped(self):
         try:
@@ -239,7 +275,9 @@ class MainWindow(QMainWindow):
         self.start_btn.setEnabled(True)
         self.stop_btn.setEnabled(False)
         self.status_label.setText('✅ Готов к записи')
-        self.status_label.setStyleSheet('background-color: white; color: #333;')
+        self.status_label.setProperty('class', 'ready')
+        self.status_label.style().unpolish(self.status_label)
+        self.status_label.style().polish(self.status_label)
         self.info_label.setText('⏱ 00:00:00 | 📹 0 кадров')
 
     def on_recording_error(self, error):
@@ -283,7 +321,50 @@ class MainWindow(QMainWindow):
         self.settings.save()
         QMessageBox.information(self, '✅ Готово', 'Настройки сохранены!')
 
+    def toggle_drawing(self):
+        """Включить/выключить режим рисования"""
+        if not self.drawing_enabled:
+            # Создаем оверлей
+            self.drawing_overlay = DrawingOverlay()
+            self.drawing_overlay.show()
+
+            # Создаем панель инструментов
+            self.drawing_toolbar = DrawingToolbar(self.drawing_overlay)
+            self.drawing_toolbar.show()
+
+            # Обновляем рекордер с оверлеем
+            self.recorder.set_overlay(self.drawing_overlay.get_image())
+
+            self.drawing_enabled = True
+            self.draw_btn.setText('🖍️ Скрыть маркер')
+            self.draw_btn.setProperty('class', 'active')
+            self.drawing_info.setText('🖍️ Рисование активно! Используйте мышку для рисования')
+            self.drawing_info.setStyleSheet('color: #4CAF50; font-size: 11px; padding: 5px;')
+        else:
+            # Скрываем
+            if self.drawing_overlay:
+                self.drawing_overlay.hide()
+                self.drawing_overlay = None
+            if self.drawing_toolbar:
+                self.drawing_toolbar.hide()
+                self.drawing_toolbar = None
+            self.drawing_enabled = False
+            self.draw_btn.setText('🖍️ Маркер')
+            self.draw_btn.setProperty('class', '')
+            self.drawing_info.setText('🖍️ Нажмите "Маркер" для активации рисования')
+            self.drawing_info.setStyleSheet('color: #888; font-size: 11px; padding: 5px;')
+
+        # Обновляем стиль кнопки
+        self.draw_btn.style().unpolish(self.draw_btn)
+        self.draw_btn.style().polish(self.draw_btn)
+
     def closeEvent(self, event):
+        # Закрываем оверлей если открыт
+        if self.drawing_overlay:
+            self.drawing_overlay.close()
+        if self.drawing_toolbar:
+            self.drawing_toolbar.close()
+
         if self.recorder.is_recording:
             reply = QMessageBox.question(self, 'Подтверждение',
                                          'Запись еще идет. Остановить и выйти?',
