@@ -1,5 +1,0 @@
-fastapi
-uvicorn[standard]
-aiohttp
-python-dotenv
-jinja2
