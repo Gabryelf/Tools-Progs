@@ -42,11 +42,6 @@
 
 <div align="center">
 
-| Способ просмотра | Ссылка |
-|------------------|--------|
-| 🖼️ **Превью с видео** | [Нажмите на изображение](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4?raw=true) |
-| 📹 **Прямой просмотр** | [Открыть видео в браузере](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4) |
-| ⬇️ **Скачать** | [Скачать MP4](https://github.com/Gabryelf/Tools-Progs/raw/main/docs/video/screen_rec_001.mp4) |
 
 <a href="https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4?raw=true">
   <img src="https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-25-47.png?raw=true" 
