@@ -108,8 +108,8 @@
 ---
 
 
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/python-projects.svg?style=social)](https://github.com/Gabryelf/Tools-Progs)
-[![GitHub forks](https://img.shields.io/github/forks/yourusername/python-projects.svg?style=social)](https://github.com/Gabryelf/Tools-Progs)
-[![GitHub watchers](https://img.shields.io/github/watchers/yourusername/python-projects.svg?style=social)](https://github.com/Gabryelf/Tools-Progs)
+[![GitHub stars](https://img.shields.io/github/stars/Gabryelf/Tools-Progs.svg?style=social)](https://github.com/Gabryelf/Tools-Progs)
+[![GitHub forks](https://img.shields.io/github/forks/Gabryelf/Tools-Progs.svg?style=social)](https://github.com/Gabryelf/Tools-Progs)
+[![GitHub watchers](https://img.shields.io/github/watchers/Gabryelf/Tools-Progs.svg?style=social)](https://github.com/Gabryelf/Tools-Progs)
 
 
