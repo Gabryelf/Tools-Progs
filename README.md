@@ -1,72 +1,111 @@
-# Code-Explainer
 
-https://code-explainer-ai-cca9.onrender.com
+# 🚀 Python Projects Tools Programs Collection
 
-uvicorn / fastapi / huggingface
+> Коллекция Python-приложений с графическим интерфейсом для повседневных задач
 
-# 🤖 Code Explainer & Similar Code Finder
+[![Python](https://img.shields.io/badge/Python-3.12+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![PyQt5](https://img.shields.io/badge/PyQt5-5.15+-41CD52?style=for-the-badge&logo=qt&logoColor=white)](https://pypi.org/project/PyQt5/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-4.8+-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white)](https://opencv.org/)
+[![License](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
+[![Windows](https://img.shields.io/badge/Windows-10%2F11-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://microsoft.com/windows)
 
-**Умный анализатор кода с поиском похожих решений из базы репозиториев**
+---
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104.1-009688?logo=fastapi)](https://fastapi.tiangolo.com)
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python)](https://python.org)
-[![Render](https://img.shields.io/badge/Deploy-Render-46B3E3?logo=render)](https://render.com)
+## 📖 О проекте
 
-## 🎯 О проекте
+Этот репозиторий содержит набор полезных Python-приложений, созданных для автоматизации повседневных задач. Все программы имеют интуитивно понятный графический интерфейс на PyQt5 и работают на Windows 10/11.
 
-Code Explainer - это интеллектуальная система для анализа программного кода, которая:
+### ✨ Особенности
 
-- 🔍 **Анализирует** любой код на популярных языках программирования
-- 📚 **Сравнивает** с базой репозиториев для поиска похожих решений  
-- 💡 **Предлагает** оптимальные подходы из проверенных источников
-- 🚀 **Работает** полностью локально - без сторонних API
+- 🎨 Современный GUI на PyQt5
+- 📹 Демонстрации и инструкции по использованию
+- 🚀 Оптимизированная производительность
+- 📁 Простота использования
+- 🔒 Безопасность и конфиденциальность
 
-## 🚀 Возможности
+---
 
-### Текущая версия
-- ✅ Детальный анализ структуры кода
-- ✅ Определение языка программирования
-- ✅ Статистика по функциям, классам, импортам
-- ✅ Рекомендации по улучшению кода
-- ✅ Web-интерфейс для удобного использования
+## 🎯 Приложения
 
-### В разработке
-- 🗃️ **База репозиториев** - локальное хранилище проверенного кода
-- 🔎 **Поиск похожего кода** - алгоритмы сравнения структур
-- 📊 **Система рекомендаций** - подбор лучших практик
-- 🎯 **Контекстный анализ** - учет доменной специфики
+### 🎥 Screen Recorder
 
-## 🛠️ Технологии
+Долгое время не мог найти удобные приложения в интернете для записи экрана с системным звуком. Решение - Python3 и его набор библиотек!
 
-- **Backend**: FastAPI + Uvicorn
-- **Frontend**: HTML5 + CSS3 + JavaScript
-- **Анализ кода**: Custom Python анализаторы
-- **База данных**: SQLite/PostgreSQL (в планах)
-- **Хостинг**: Render.com
+#### Возможности
+- ✅ Запись всего экрана в формате MP4
+- 🎵 Захват системного звука (WASAPI Loopback)
+- 🎨 Современный интерфейс с анимациями
+- 📁 Автоматическое сохранение на рабочий стол
+- ⚡ Оптимизированная производительность
 
-## 📦 Установка и запуск
+#### Демонстрация
 
-### Локальная разработка
+<a href="https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4">
+  <img src="https://img.shields.io/badge/▶️_Смотреть_демонстрацию-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="Watch Demo"/>
+</a>
 
-1. **Клонируйте репозиторий**:
-```bash
-git clone https://github.com/Gabryelf/code-explainer.git
-cd code-explainer
-Установите зависимости:
 
-bash
-pip install -r requirements.txt
-Запустите приложение:
+#### Скриншоты
 
-bash
-python main.py
-Откройте в браузере: http://localhost:8000
+| Главное окно | Процесс записи | Результат |
+|--------------|----------------|-----------|
+| ![Main Window](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-24-56.png) | ![Recording](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-25-47.png) | ![Saved](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-26-01.png) |
 
-Деплой на Render
-Форкните репозиторий
+#### Технологии
 
-Создайте Web Service на Render.com
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+![PyQt5](https://img.shields.io/badge/PyQt5-41CD52?style=flat&logo=qt&logoColor=white)
+![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=flat&logo=opencv&logoColor=white)
+![FFmpeg](https://img.shields.io/badge/FFmpeg-007808?style=flat&logo=ffmpeg&logoColor=white)
 
-Укажите build command: pip install -r requirements.txt
+---
 
-Укажите start command: uvicorn main:app --host 0.0.0.0 --port $PORT
+## 🔧 Использование
+
+### Screen Recorder
+
+1. **Запуск**: `python screen_recorder.py`
+2. **Начало записи**: Нажмите кнопку "▶ Начать запись"
+3. **Остановка**: Нажмите "⏹ Остановить запись"
+4. **Результат**: Видео автоматически сохраняется на рабочий стол
+
+#### Горячие клавиши
+
+| Комбинация | Действие |
+|------------|----------|
+| `Ctrl+Shift+R` | Начать запись |
+| `Ctrl+Shift+S` | Остановить запись |
+| `Ctrl+Q` | Выйти из приложения |
+
+---
+
+
+## 🙏 Благодарности
+
+- [PyQt5](https://www.riverbankcomputing.com/software/pyqt/) - за отличный фреймворк
+- [OpenCV](https://opencv.org/) - за мощный инструментарий
+- [FFmpeg](https://ffmpeg.org/) - за возможности обработки видео
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ in Python</sub>
+</div>
+
+
+
+---
+
+
+<video src="https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4" controls width="100%">
+  Your browser does not support the video tag.
+</video>
+
+---
+
+
+[![GitHub stars](https://img.shields.io/github/stars/yourusername/python-projects.svg?style=social)](https://github.com/yourusername/python-projects)
+[![GitHub forks](https://img.shields.io/github/forks/yourusername/python-projects.svg?style=social)](https://github.com/yourusername/python-projects)
+[![GitHub watchers](https://img.shields.io/github/watchers/yourusername/python-projects.svg?style=social)](https://github.com/yourusername/python-projects)
+
+
