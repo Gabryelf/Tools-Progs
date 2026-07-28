@@ -41,24 +41,26 @@
 ### 🎬 Демонстрация работы
 
 <div align="center">
-  <a href="https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4?raw=true">
-    <img src="https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-25-47.png?raw=true" 
-         alt="Нажмите для просмотра видео" 
-         width="80%"
-         style="border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
-    <br>
-    <b>▶️ Нажмите на изображение, чтобы скачать/посмотреть видео</b>
-  </a>
+
+| Способ просмотра | Ссылка |
+|------------------|--------|
+| 🖼️ **Превью с видео** | [Нажмите на изображение](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4?raw=true) |
+| 📹 **Прямой просмотр** | [Открыть видео в браузере](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4) |
+| ⬇️ **Скачать** | [Скачать MP4](https://github.com/Gabryelf/Tools-Progs/raw/main/docs/video/screen_rec_001.mp4) |
+
+<a href="https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4?raw=true">
+  <img src="https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-25-47.png?raw=true" 
+       alt="Screen Recorder Demo" 
+       width="80%"
+       style="border-radius: 12px; border: 2px solid #2d2d2d; box-shadow: 0 8px 16px rgba(0,0,0,0.3);">
+</a>
+
+<br><br>
+
+[![▶️ Смотреть демонстрацию](https://img.shields.io/badge/▶️_Смотреть_демонстрацию-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4?raw=true)
+[![⬇️ Скачать видео](https://img.shields.io/badge/⬇️_Скачать_видео-0078D4?style=for-the-badge&logo=download&logoColor=white)](https://github.com/Gabryelf/Tools-Progs/raw/main/docs/video/screen_rec_001.mp4)
+
 </div>
-
-<details>
-<summary><b>📹 Или скачайте видео напрямую</b></summary>
-
-<br>
-
-[⬇️ Скачать видео (MP4)](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/video/screen_rec_001.mp4?raw=true)
-
-</details>
 
 #### Скриншоты
 
