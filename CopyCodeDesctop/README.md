@@ -77,55 +77,6 @@
 
 ---
 
-## 📁 Структура проекта
-
-```
-CopyCode/
-├── src/                        # Исходный код
-│   ├── main.py                 # Точка входа
-│   ├── config.py               # Управление конфигурацией
-│   ├── models/                 # Модели данных
-│   │   ├── settings.py         # Настройки приложения
-│   │   └── language.py         # Модель языка
-│   ├── services/               # Сервисы
-│   │   ├── code_collector.py   # Сбор кода
-│   │   ├── file_processor.py   # Обработка файлов
-│   │   └── clipboard_manager.py # Работа с буфером
-│   ├── ui/                     # Интерфейс
-│   │   ├── main_window.py      # Главное окно
-│   │   ├── widgets.py          # Виджеты
-│   │   ├── styles.py           # Стили
-│   │   └── svg_renderer.py     # Рендеринг SVG
-│   └── utils/                  # Утилиты
-│       ├── helpers.py          # Вспомогательные функции
-│       └── exceptions.py       # Исключения
-├── assets/                     # Ресурсы
-│   └── icons/                  # Иконки (SVG/PNG)
-│       ├── app.ico             # Иконка приложения
-│       ├── copy.svg            # Копировать
-│       ├── save.svg            # Сохранить
-│       ├── zip.svg             # ZIP архив
-│       ├── folder.svg          # Папка
-│       ├── comments.svg        # Комментарии
-│       ├── empty.svg           # Пустые строки
-│       ├── structure.svg       # Структура
-│       ├── python.svg          # Python
-│       ├── javascript.svg      # JavaScript
-│       ├── html.svg            # HTML
-│       ├── css.svg             # CSS
-│       ├── c.svg               # C
-│       ├── cpp.svg             # C++
-│       ├── java.svg            # Java
-│       ├── go.svg              # Go
-│       └── rust.svg            # Rust
-├── config/                     # Конфигурация
-│   └── settings.json           # Настройки приложения
-├── requirements.txt            # Зависимости
-└── README.md                   # Документация
-```
-
----
-
 ## 🛠️ Установка и запуск
 
 ### 1. Клонирование репозитория
