@@ -1,0 +1,72 @@
+{
+    "app": {
+        "name": "Copy Code ++",
+        "version": "0.0.2",
+        "author": "Gabryelf",
+        "description": "Универсальный копировщик кода проекта"
+    },
+    "paths": {
+        "icons": "assets/icons",
+        "config": "config/settings.json",
+        "logs": "logs/app.log"
+    },
+    "ui": {
+        "window_width": 650,
+        "window_height": 600,
+        "theme": "default",
+        "font_family": "Segoe UI"
+    },
+    "code": {
+        "max_file_size_mb": 5,
+        "default_language": "all",
+        "include_comments": true,
+        "include_empty_lines": false,
+        "include_structure": true
+    },
+    "ignore": {
+        "directories": [
+            "__pycache__",
+            ".git",
+            "node_modules",
+            "venv",
+            ".env",
+            ".idea",
+            ".vscode",
+            "dist",
+            "build",
+            "logs"
+        ],
+        "files": [
+            "*.pyc",
+            "*.pyo",
+            "*.so",
+            "*.dll",
+            "*.exe",
+            "*.log"
+        ],
+        "extensions": []
+    },
+    "languages": {
+        "python": [".py", ".pyw", ".pyi"],
+        "javascript": [".js", ".jsx", ".mjs", ".ts", ".tsx"],
+        "html": [".html", ".htm", ".xhtml"],
+        "css": [".css", ".scss", ".sass", ".less"],
+        "c": [".c", ".h"],
+        "cpp": [".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx"],
+        "java": [".java", ".kt", ".kts"],
+        "go": [".go"],
+        "rust": [".rs"],
+        "php": [".php"],
+        "ruby": [".rb"],
+        "swift": [".swift"],
+        "sql": [".sql"]
+    },
+    "clipboard": {
+        "max_preview_lines": 50,
+        "encoding": "utf-8"
+    },
+    "export": {
+        "zip_compression": 9,
+        "default_filename": "code_archive.zip"
+    }
+}
