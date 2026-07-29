@@ -5,7 +5,7 @@
 import tkinter as tk
 from tkinter import ttk
 from pathlib import Path
-from typing import Optional, Callable, Union
+from typing import Optional, Callable, Union, List, Dict
 
 try:
     from PIL import Image, ImageTk
@@ -36,7 +36,6 @@ class IconButton(ttk.Button):
                 self._photo = photo
                 self.config(image=photo, compound=tk.LEFT)
             else:
-                # Если иконка не загрузилась, показываем текст
                 print(f"⚠️ Иконка не загружена: {self.icon_path}")
 
     def set_icon(self, icon_path: Path, size: tuple = None):
@@ -73,14 +72,114 @@ class IconLabel(ttk.Label):
         self._load_icon()
 
 
+class ExternalFilesList(ttk.Frame):
+    """Виджет для отображения списка внешних файлов"""
+
+    def __init__(self, parent, on_remove: Callable = None, **kwargs):
+        super().__init__(parent, **kwargs)
+        self.on_remove = on_remove
+        self.files = []
+        self._create_widgets()
+
+    def _create_widgets(self):
+        # Заголовок
+        header_frame = ttk.Frame(self)
+        header_frame.pack(fill=tk.X, pady=(0, 5))
+
+        ttk.Label(header_frame, text="📎 Внешние файлы:", font=('Segoe UI', 9, 'bold')).pack(side=tk.LEFT)
+        ttk.Label(header_frame, text=f"({len(self.files)})", font=('Segoe UI', 9)).pack(side=tk.LEFT, padx=5)
+
+        # Список файлов
+        self.list_frame = ttk.Frame(self)
+        self.list_frame.pack(fill=tk.BOTH, expand=True)
+
+        self.canvas = tk.Canvas(self.list_frame, height=100)
+        scrollbar = ttk.Scrollbar(self.list_frame, orient="vertical", command=self.canvas.yview)
+        self.scrollable_frame = ttk.Frame(self.canvas)
+
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        )
+
+        self.canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.canvas.configure(yscrollcommand=scrollbar.set)
+
+        self.canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    def update_files(self, files: List[Dict[str, str]]):
+        """Обновление списка файлов"""
+        self.files = files
+
+        # Очищаем
+        for widget in self.scrollable_frame.winfo_children():
+            widget.destroy()
+
+        # Добавляем файлы
+        for i, file_info in enumerate(files):
+            file_frame = ttk.Frame(self.scrollable_frame)
+            file_frame.pack(fill=tk.X, pady=2)
+
+            # Иконка файла
+            ttk.Label(file_frame, text="📄").pack(side=tk.LEFT, padx=5)
+
+            # Имя файла
+            ttk.Label(file_frame, text=file_info['name'], font=('Segoe UI', 9)).pack(side=tk.LEFT, padx=5)
+
+            # Размер
+            size_kb = file_info['size'] // 1024
+            size_str = f"{size_kb} KB" if size_kb > 0 else f"{file_info['size']} B"
+            ttk.Label(file_frame, text=size_str, font=('Segoe UI', 8), foreground='gray').pack(side=tk.LEFT, padx=5)
+
+            # Путь (укороченный)
+            path = Path(file_info['path'])
+            short_path = str(path.parent)
+            if len(short_path) > 30:
+                short_path = "..." + short_path[-27:]
+            ttk.Label(file_frame, text=short_path, font=('Segoe UI', 8), foreground='gray').pack(side=tk.LEFT, padx=5)
+
+            # Кнопка удаления
+            remove_btn = ttk.Button(
+                file_frame,
+                text="✕",
+                width=3,
+                command=lambda idx=i: self._remove_file(idx)
+            )
+            remove_btn.pack(side=tk.RIGHT, padx=5)
+
+        # Обновляем счетчик
+        self._update_counter()
+
+    def _remove_file(self, index: int):
+        """Удаление файла"""
+        if self.on_remove:
+            self.on_remove(index)
+
+    def _update_counter(self):
+        """Обновление счетчика файлов"""
+        # Находим заголовок и обновляем
+        for child in self.winfo_children():
+            if isinstance(child, ttk.Frame):
+                for subchild in child.winfo_children():
+                    if isinstance(subchild, ttk.Label) and subchild.cget('text').startswith('('):
+                        subchild.config(text=f"({len(self.files)})")
+                        break
+
+
 class FileSelector(ttk.Frame):
     """Виджет выбора файла/папки"""
 
     def __init__(self, parent, label: str = "Выберите папку:",
                  on_select: Callable = None, icon_path: Optional[Path] = None,
-                 **kwargs):
+                 select_type: str = "directory", **kwargs):
+        """
+        Args:
+            select_type: "directory" или "file"
+        """
         super().__init__(parent, **kwargs)
         self.on_select = on_select
+        self.select_type = select_type
         self.path_var = tk.StringVar()
 
         if icon_path and icon_path.exists():
@@ -101,17 +200,25 @@ class FileSelector(ttk.Frame):
 
     def _browse(self):
         from tkinter import filedialog
-        folder = filedialog.askdirectory()
-        if folder:
-            self.path_var.set(folder)
-            if self.on_select:
-                self.on_select(Path(folder))
 
-    def get_path(self) -> Path:
-        return Path(self.path_var.get())
+        if self.select_type == "directory":
+            folder = filedialog.askdirectory()
+            if folder:
+                self.path_var.set(folder)
+                if self.on_select:
+                    self.on_select(Path(folder))
+        else:
+            files = filedialog.askopenfilenames()
+            if files:
+                self.path_var.set("; ".join(files))
+                if self.on_select:
+                    self.on_select([Path(f) for f in files])
 
-    def set_path(self, path: Path):
-        self.path_var.set(str(path))
+    def get_path(self):
+        return Path(self.path_var.get()) if self.select_type == "directory" else self.path_var.get()
+
+    def set_path(self, path):
+        self.path_var.set(str(path) if isinstance(path, Path) else path)
 
 
 class LanguageSelector(ttk.LabelFrame):
@@ -132,32 +239,10 @@ class LanguageSelector(ttk.LabelFrame):
         if not self.icons_dir:
             return None
 
-        # Ищем по разным расширениям
         for ext in ['.svg', '.png', '.ico']:
             path = self.icons_dir / f"{name}{ext}"
             if path.exists():
                 return path
-
-        # Пробуем альтернативные имена
-        alternatives = {
-            'all': ['language', 'code'],
-            'python': ['py', 'snake'],
-            'javascript': ['js', 'node'],
-            'html': ['htm', 'web'],
-            'css': ['style'],
-            'c': ['clang'],
-            'cpp': ['cplusplus', 'c++'],
-            'java': ['coffee'],
-            'go': ['golang'],
-            'rust': ['crab']
-        }
-
-        if name in alternatives:
-            for alt in alternatives[name]:
-                for ext in ['.svg', '.png', '.ico']:
-                    path = self.icons_dir / f"{alt}{ext}"
-                    if path.exists():
-                        return path
 
         return None
 
@@ -179,7 +264,6 @@ class LanguageSelector(ttk.LabelFrame):
                 )
                 icon_label.pack(side=tk.LEFT, padx=(0, 5))
             else:
-                # Если иконка не найдена, используем текстовый символ
                 ttk.Label(frame, text="●").pack(side=tk.LEFT, padx=(0, 5))
 
             ttk.Radiobutton(
@@ -217,35 +301,18 @@ class OptionsPanel(ttk.LabelFrame):
         self.comments_var = tk.BooleanVar(value=True)
         self.empty_var = tk.BooleanVar(value=False)
         self.structure_var = tk.BooleanVar(value=True)
+        self.include_external_var = tk.BooleanVar(value=True)
 
         self._create_widgets()
 
     def _find_icon(self, name: str) -> Optional[Path]:
-        """Поиск иконки по имени"""
         if not self.icons_dir:
             return None
 
-        # Ищем по разным расширениям
         for ext in ['.svg', '.png', '.ico']:
             path = self.icons_dir / f"{name}{ext}"
             if path.exists():
                 return path
-
-        # Пробуем альтернативные имена
-        alternatives = {
-            'comments': ['comment', 'text', 'note'],
-            'empty': ['empty_battery', 'blank', 'space'],
-            'structure': ['database', 'tree', 'folder_tree'],
-            'folder': ['directory', 'open_folder']
-        }
-
-        if name in alternatives:
-            for alt in alternatives[name]:
-                for ext in ['.svg', '.png', '.ico']:
-                    path = self.icons_dir / f"{alt}{ext}"
-                    if path.exists():
-                        return path
-
         return None
 
     def _create_widgets(self):
@@ -262,8 +329,6 @@ class OptionsPanel(ttk.LabelFrame):
                 text=""
             )
             icon_label.pack(side=tk.LEFT)
-        else:
-            ttk.Label(comments_frame, text="💬").pack(side=tk.LEFT)
 
         ttk.Checkbutton(
             comments_frame,
@@ -285,8 +350,6 @@ class OptionsPanel(ttk.LabelFrame):
                 text=""
             )
             icon_label.pack(side=tk.LEFT)
-        else:
-            ttk.Label(empty_frame, text="⬜").pack(side=tk.LEFT)
 
         ttk.Checkbutton(
             empty_frame,
@@ -308,8 +371,6 @@ class OptionsPanel(ttk.LabelFrame):
                 text=""
             )
             icon_label.pack(side=tk.LEFT)
-        else:
-            ttk.Label(structure_frame, text="📊").pack(side=tk.LEFT)
 
         ttk.Checkbutton(
             structure_frame,
@@ -318,9 +379,30 @@ class OptionsPanel(ttk.LabelFrame):
             style='Option.TCheckbutton'
         ).pack(side=tk.LEFT)
 
+        # Внешние файлы (новая опция)
+        external_frame = ttk.Frame(self)
+        external_frame.grid(row=1, column=0, columnspan=3, sticky=tk.W, pady=5, padx=5)
+
+        icon_path = self._find_icon('external')
+        if icon_path:
+            icon_label = IconLabel(
+                external_frame,
+                icon_path=icon_path,
+                icon_size=(16, 16),
+                text=""
+            )
+            icon_label.pack(side=tk.LEFT)
+
+        ttk.Checkbutton(
+            external_frame,
+            text="Включать внешние файлы",
+            variable=self.include_external_var,
+            style='Option.TCheckbutton'
+        ).pack(side=tk.LEFT)
+
         # Игнорируемые папки
         ignore_frame = ttk.Frame(self)
-        ignore_frame.grid(row=1, column=0, columnspan=3, sticky=tk.W, pady=5)
+        ignore_frame.grid(row=2, column=0, columnspan=3, sticky=tk.W, pady=5)
 
         icon_path = self._find_icon('folder')
         if icon_path:
@@ -331,8 +413,6 @@ class OptionsPanel(ttk.LabelFrame):
                 text=""
             )
             icon_label.pack(side=tk.LEFT, padx=(0, 5))
-        else:
-            ttk.Label(ignore_frame, text="📁").pack(side=tk.LEFT, padx=(0, 5))
 
         ttk.Label(ignore_frame, text="Игнорировать папки:").pack(side=tk.LEFT)
 
@@ -350,6 +430,7 @@ class OptionsPanel(ttk.LabelFrame):
             'include_comments': self.comments_var.get(),
             'include_empty_lines': self.empty_var.get(),
             'include_structure': self.structure_var.get(),
+            'include_external': self.include_external_var.get(),
             'ignore_dirs': [d.strip() for d in self.ignore_var.get().split(',')]
         }
 
@@ -360,6 +441,8 @@ class OptionsPanel(ttk.LabelFrame):
             self.empty_var.set(options['include_empty_lines'])
         if 'include_structure' in options:
             self.structure_var.set(options['include_structure'])
+        if 'include_external' in options:
+            self.include_external_var.set(options['include_external'])
         if 'ignore_dirs' in options:
             self.ignore_var.set(', '.join(options['ignore_dirs']))
 
@@ -372,6 +455,7 @@ class PreviewText(tk.Text):
 
         self.tag_configure('header', foreground='#2196F3', font=('Consolas', 9, 'bold'))
         self.tag_configure('file', foreground='#4CAF50', font=('Consolas', 9, 'italic'))
+        self.tag_configure('external', foreground='#FF9800', font=('Consolas', 9, 'italic'))
         self.tag_configure('error', foreground='#F44336')
         self.tag_configure('success', foreground='#4CAF50')
 

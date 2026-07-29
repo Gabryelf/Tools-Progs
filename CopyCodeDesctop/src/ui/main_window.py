@@ -1,5 +1,5 @@
 """
-Главное окно приложения
+Главное окно приложения с поддержкой внешних файлов
 """
 
 import tkinter as tk
@@ -8,14 +8,14 @@ from pathlib import Path
 import threading
 import os
 
-# Используем абсолютные импорты
 from src.config import get_config
 from src.models.settings import ApplicationSettings
 from src.services.code_collector import CodeCollector
 from src.services.clipboard_manager import ClipboardManager
 from src.ui.widgets import (
     FileSelector, LanguageSelector, OptionsPanel,
-    PreviewText, IconButton, IconLabel, IconManager
+    PreviewText, IconButton, IconLabel, IconManager,
+    ExternalFilesList
 )
 from src.ui.styles import AppStyles
 
@@ -24,12 +24,6 @@ class MainWindow:
     """Главное окно приложения"""
 
     def __init__(self, root: tk.Tk):
-        """
-        Инициализация главного окна
-
-        Args:
-            root: Корневой виджет Tk
-        """
         self.root = root
         self.config = get_config()
         self.settings = ApplicationSettings()
@@ -49,18 +43,16 @@ class MainWindow:
         self._bind_events()
         self._load_settings()
 
-        # Обновляем статус
         self.update_status("✅ Готов к работе")
 
     def _setup_window(self):
         """Настройка окна"""
-        # Заголовок и размер
         self.root.title(f"{self.config.get('app.name', 'Copy Code Pro')}")
 
         width = self.settings.window_width
         height = self.settings.window_height
-        self.root.geometry(f"{width}x{height}")
-        self.root.minsize(600, 500)
+        self.root.geometry(f"{width}x{700}")
+        self.root.minsize(700, 600)
 
         # Иконка окна
         icon_path = self.icons_dir / "app.ico"
@@ -70,7 +62,6 @@ class MainWindow:
             except:
                 pass
 
-        # Стили
         AppStyles.setup_styles()
         self.colors = AppStyles.get_colors()
 
@@ -95,11 +86,10 @@ class MainWindow:
         self.main_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
         self.main_canvas.configure(yscrollcommand=scrollbar.set)
 
-        # Позиционирование
         self.main_canvas.pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 
-        # ---- Заголовок с логотипом ----
+        # ---- Заголовок ----
         self._create_header()
 
         # ---- Выбор проекта ----
@@ -108,10 +98,13 @@ class MainWindow:
         # ---- Выбор языка ----
         self._create_language_selector()
 
+        # ---- Внешние файлы (НОВОЕ) ----
+        self._create_external_files_section()
+
         # ---- Опции ----
         self._create_options_panel()
 
-        # ---- Кнопки действий с иконками ----
+        # ---- Кнопки действий ----
         self._create_action_buttons()
 
         # ---- Прогресс ----
@@ -125,15 +118,14 @@ class MainWindow:
 
         # Веса для растягивания
         self.scrollable_frame.columnconfigure(1, weight=1)
-        self.scrollable_frame.rowconfigure(9, weight=1)
+        self.scrollable_frame.rowconfigure(10, weight=1)
 
     def _create_header(self):
         """Создание заголовка с логотипом"""
         header_frame = ttk.Frame(self.scrollable_frame)
         header_frame.grid(row=0, column=0, columnspan=3, pady=15)
 
-        # Логотип
-        logo_path = self.icons_dir / "puzzle.svg"
+        logo_path = self.icons_dir / "logo.svg"
         if logo_path.exists():
             logo_label = IconLabel(
                 header_frame,
@@ -142,7 +134,6 @@ class MainWindow:
             )
             logo_label.pack(side=tk.LEFT, padx=10)
 
-        # Текст заголовка
         title_frame = ttk.Frame(header_frame)
         title_frame.pack(side=tk.LEFT)
 
@@ -154,12 +145,12 @@ class MainWindow:
 
         ttk.Label(
             title_frame,
-            text="Универсальный копировщик кода проекта",
+            text="Универсальный копировщик кода с поддержкой внешних файлов",
             style='Subtitle.TLabel'
         ).pack(anchor=tk.W)
 
     def _create_project_selector(self):
-        """Создание выбора проекта с иконкой"""
+        """Создание выбора проекта"""
         folder_icon = self.icons_dir / "folder.svg"
 
         self.project_selector = FileSelector(
@@ -174,7 +165,7 @@ class MainWindow:
         )
 
     def _create_language_selector(self):
-        """Создание выбора языка с иконками"""
+        """Создание выбора языка"""
         languages = ['all', 'python', 'javascript', 'html', 'css', 'c', 'cpp', 'java', 'go', 'rust']
 
         self.language_selector = LanguageSelector(
@@ -188,21 +179,73 @@ class MainWindow:
             sticky=tk.W + tk.E, padx=10, pady=10
         )
 
+    def _create_external_files_section(self):
+        """Создание секции внешних файлов (НОВАЯ)"""
+        external_frame = ttk.LabelFrame(
+            self.scrollable_frame,
+            text="📎 Внешние файлы",
+            padding="5"
+        )
+        external_frame.grid(
+            row=3, column=0, columnspan=3,
+            sticky=tk.W + tk.E, padx=10, pady=5
+        )
+
+        # Кнопка добавления файлов
+        add_frame = ttk.Frame(external_frame)
+        add_frame.pack(fill=tk.X, pady=5)
+
+        add_icon = self.icons_dir / "add_file.svg"
+        if add_icon.exists():
+            add_btn = IconButton(
+                add_frame,
+                icon_path=add_icon,
+                text="Добавить файл",
+                command=self._add_external_file,
+                icon_size=(16, 16)
+            )
+            add_btn.pack(side=tk.LEFT, padx=5)
+        else:
+            ttk.Button(
+                add_frame,
+                text="➕ Добавить файл",
+                command=self._add_external_file
+            ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Button(
+            add_frame,
+            text="🗑 Очистить все",
+            command=self._clear_external_files
+        ).pack(side=tk.LEFT, padx=5)
+
+        ttk.Label(
+            add_frame,
+            text="Добавьте файлы из любого места для включения в сборку",
+            foreground='gray'
+        ).pack(side=tk.LEFT, padx=20)
+
+        # Список внешних файлов
+        self.external_files_list = ExternalFilesList(
+            external_frame,
+            on_remove=self._remove_external_file
+        )
+        self.external_files_list.pack(fill=tk.BOTH, expand=True, pady=5)
+
     def _create_options_panel(self):
-        """Создание панели опций с иконками"""
+        """Создание панели опций"""
         self.options_panel = OptionsPanel(
             self.scrollable_frame,
             icons_dir=self.icons_dir
         )
         self.options_panel.grid(
-            row=3, column=0, columnspan=3,
+            row=4, column=0, columnspan=3,
             sticky=tk.W + tk.E, padx=10, pady=10
         )
 
     def _create_action_buttons(self):
-        """Создание кнопок действий с иконками"""
+        """Создание кнопок действий"""
         button_frame = ttk.Frame(self.scrollable_frame)
-        button_frame.grid(row=4, column=0, columnspan=3, pady=15)
+        button_frame.grid(row=5, column=0, columnspan=3, pady=15)
 
         # Иконки для кнопок
         copy_icon = self.icons_dir / "copy.svg"
@@ -218,7 +261,7 @@ class MainWindow:
                 command=self._copy_to_clipboard,
                 icon_size=(20, 20),
                 style='Action.TButton',
-                width=20
+                width=22
             )
         else:
             copy_btn = ttk.Button(
@@ -226,7 +269,7 @@ class MainWindow:
                 text="📋 Копировать в буфер",
                 command=self._copy_to_clipboard,
                 style='Action.TButton',
-                width=20
+                width=22
             )
         copy_btn.grid(row=0, column=0, padx=5)
 
@@ -239,7 +282,7 @@ class MainWindow:
                 command=self._save_to_file,
                 icon_size=(20, 20),
                 style='Action.TButton',
-                width=20
+                width=22
             )
         else:
             save_btn = ttk.Button(
@@ -247,7 +290,7 @@ class MainWindow:
                 text="💾 Сохранить в файл",
                 command=self._save_to_file,
                 style='Action.TButton',
-                width=20
+                width=22
             )
         save_btn.grid(row=0, column=1, padx=5)
 
@@ -260,7 +303,7 @@ class MainWindow:
                 command=self._export_zip,
                 icon_size=(20, 20),
                 style='Action.TButton',
-                width=20
+                width=22
             )
         else:
             zip_btn = ttk.Button(
@@ -268,7 +311,7 @@ class MainWindow:
                 text="📤 Экспорт в ZIP",
                 command=self._export_zip,
                 style='Action.TButton',
-                width=20
+                width=22
             )
         zip_btn.grid(row=0, column=2, padx=5)
 
@@ -280,7 +323,7 @@ class MainWindow:
             length=600,
             style='Progress.Horizontal.TProgressbar'
         )
-        self.progress.grid(row=5, column=0, columnspan=3, pady=10, padx=10)
+        self.progress.grid(row=6, column=0, columnspan=3, pady=10, padx=10)
 
     def _create_status(self):
         """Создание статуса"""
@@ -289,14 +332,13 @@ class MainWindow:
             text="Готов",
             style='Status.TLabel'
         )
-        self.status_label.grid(row=6, column=0, columnspan=3, pady=5)
+        self.status_label.grid(row=7, column=0, columnspan=3, pady=5)
 
     def _create_preview(self):
         """Создание предпросмотра"""
         preview_label_frame = ttk.Frame(self.scrollable_frame)
-        preview_label_frame.grid(row=7, column=0, columnspan=3, sticky=tk.W, pady=5, padx=10)
+        preview_label_frame.grid(row=8, column=0, columnspan=3, sticky=tk.W, pady=5, padx=10)
 
-        # Иконка для предпросмотра
         code_icon = self.icons_dir / "code.svg"
         if code_icon.exists():
             icon_label = IconLabel(
@@ -309,14 +351,12 @@ class MainWindow:
         else:
             ttk.Label(preview_label_frame, text="📄 Предпросмотр:").pack(side=tk.LEFT)
 
-        # Контейнер для текста
         text_frame = ttk.Frame(self.scrollable_frame)
-        text_frame.grid(row=8, column=0, columnspan=3, sticky=tk.W + tk.E + tk.N + tk.S, padx=10)
+        text_frame.grid(row=9, column=0, columnspan=3, sticky=tk.W + tk.E + tk.N + tk.S, padx=10)
 
-        self.preview_text = PreviewText(text_frame, height=10)
+        self.preview_text = PreviewText(text_frame, height=12)
         self.preview_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # Скроллбар
         preview_scrollbar = ttk.Scrollbar(
             text_frame,
             orient=tk.VERTICAL,
@@ -331,14 +371,11 @@ class MainWindow:
 
     def _load_settings(self):
         """Загрузка настроек"""
-        # Загружаем последний проект
         if self.settings.project_path.exists():
             self.project_selector.set_path(self.settings.project_path)
 
-        # Загружаем язык
         self.language_selector.set_language(self.settings.language)
 
-        # Загружаем опции
         self.options_panel.set_options({
             'include_comments': self.settings.include_comments,
             'include_empty_lines': self.settings.include_empty_lines,
@@ -347,30 +384,88 @@ class MainWindow:
         })
 
     def _on_project_selected(self, path: Path):
-        """Обработка выбора проекта"""
         self.settings.project_path = path
         self.settings.save()
         self.update_status(f"📁 Выбран проект: {path.name}")
 
     def _on_language_selected(self, language: str):
-        """Обработка выбора языка"""
         self.settings.language = language
         self.settings.save()
 
+    def _add_external_file(self):
+        """Добавление внешнего файла"""
+        file_paths = filedialog.askopenfilenames(
+            title="Выберите файлы для добавления",
+            filetypes=[
+                ("All files", "*.*"),
+                ("Python files", "*.py"),
+                ("Text files", "*.txt"),
+                ("JavaScript files", "*.js"),
+                ("HTML files", "*.html"),
+                ("CSS files", "*.css"),
+                ("C++ files", "*.cpp"),
+                ("Java files", "*.java")
+            ]
+        )
+
+        if not file_paths:
+            return
+
+        # Создаем code_collector если его нет
+        if not self.code_collector:
+            options = self.options_panel.get_options()
+            self.settings.include_comments = options['include_comments']
+            self.settings.include_empty_lines = options['include_empty_lines']
+            self.settings.include_structure = options['include_structure']
+            self.settings.ignore_dirs = options['ignore_dirs']
+            self.code_collector = CodeCollector(self.settings)
+
+        added = 0
+        for file_path in file_paths:
+            if self.code_collector.add_external_file(Path(file_path)):
+                added += 1
+
+        # Обновляем список
+        self._update_external_files_list()
+        self.update_status(f"✅ Добавлено {added} внешних файлов")
+
+    def _remove_external_file(self, index: int):
+        """Удаление внешнего файла"""
+        if self.code_collector:
+            if self.code_collector.remove_external_file(index):
+                self._update_external_files_list()
+                self.update_status(f"🗑 Файл удален")
+
+    def _clear_external_files(self):
+        """Очистка внешних файлов"""
+        if self.code_collector and self.code_collector.get_external_files_count() > 0:
+            if messagebox.askyesno("Подтверждение", "Удалить все внешние файлы?"):
+                self.code_collector.clear_external_files()
+                self._update_external_files_list()
+                self.update_status("🗑 Все внешние файлы удалены")
+
+    def _update_external_files_list(self):
+        """Обновление списка внешних файлов"""
+        if self.code_collector:
+            files = self.code_collector.get_external_files()
+            self.external_files_list.update_files(files)
+
     def _collect_code(self) -> str:
         """Сбор кода"""
-        # Обновляем настройки
         options = self.options_panel.get_options()
         self.settings.include_comments = options['include_comments']
         self.settings.include_empty_lines = options['include_empty_lines']
         self.settings.include_structure = options['include_structure']
         self.settings.ignore_dirs = options['ignore_dirs']
 
-        # Создаем сборщик
         self.code_collector = CodeCollector(self.settings)
 
-        # Собираем код
-        return self.code_collector.collect()
+        # Добавляем внешние файлы если они уже были
+        # (они сохраняются в отдельном файле настроек)
+
+        return self.code_collector.collect(
+            include_external=options.get('include_external', True)
+        )
 
     def _copy_to_clipboard(self):
         """Копирование в буфер обмена"""
@@ -389,15 +484,20 @@ class MainWindow:
 
                     if success:
                         files_count = self.code_collector.get_files_count()
-                        self.update_status(f"✅ Скопировано в буфер! ({files_count} файлов)")
+                        external_count = self.code_collector.get_external_files_count()
+                        status_msg = f"✅ Скопировано! ({files_count} файлов проекта"
+                        if external_count > 0:
+                            status_msg += f", {external_count} внешних"
+                        status_msg += ")"
+                        self.update_status(status_msg)
 
-                        # Показываем предпросмотр
                         self.root.after(0, lambda: self.preview_text.show_text(code))
 
                         self.root.after(0, lambda: messagebox.showinfo(
                             "Успех",
                             f"✅ Код скопирован в буфер обмена!\n"
-                            f"📊 Обработано файлов: {files_count}"
+                            f"📊 Файлов проекта: {files_count}\n"
+                            f"📎 Внешних файлов: {external_count}"
                         ))
                     else:
                         self.update_status("❌ Ошибка копирования")
@@ -452,12 +552,18 @@ class MainWindow:
                         f.write(code)
 
                     files_count = self.code_collector.get_files_count()
-                    self.update_status(f"✅ Сохранено: {Path(file_path).name} ({files_count} файлов)")
+                    external_count = self.code_collector.get_external_files_count()
+                    status_msg = f"✅ Сохранено! ({files_count} файлов проекта"
+                    if external_count > 0:
+                        status_msg += f", {external_count} внешних"
+                    status_msg += ")"
+                    self.update_status(status_msg)
 
                     self.root.after(0, lambda: messagebox.showinfo(
                         "Успех",
                         f"✅ Код сохранен в:\n{file_path}\n"
-                        f"📊 Файлов: {files_count}"
+                        f"📊 Файлов проекта: {files_count}\n"
+                        f"📎 Внешних файлов: {external_count}"
                     ))
                 else:
                     self.update_status("❌ Ошибка сбора кода")
@@ -502,12 +608,10 @@ class MainWindow:
             self._start_progress()
 
             try:
-                # Получаем настройки
                 options = self.options_panel.get_options()
                 ignore_dirs = options['ignore_dirs']
                 language = self.language_selector.get_language()
 
-                # Получаем расширения
                 from src.models.language import get_language_registry
                 registry = get_language_registry()
 
@@ -522,7 +626,6 @@ class MainWindow:
 
                 with zipfile.ZipFile(file_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
                     for root, dirs, files in os.walk(project_path):
-                        # Фильтруем папки
                         dirs[:] = [d for d in dirs if d not in ignore_dirs and not d.startswith('.')]
 
                         for file in files:
@@ -530,6 +633,16 @@ class MainWindow:
                             if file_path_full.suffix in extensions:
                                 arcname = file_path_full.relative_to(project_path)
                                 zipf.write(file_path_full, arcname)
+                                count += 1
+
+                    # Добавляем внешние файлы если они есть
+                    if self.code_collector:
+                        external_files = self.code_collector.get_external_files()
+                        for ext_file in external_files:
+                            ext_path = Path(ext_file['path'])
+                            if ext_path.exists():
+                                arcname = f"external/{ext_path.name}"
+                                zipf.write(ext_path, arcname)
                                 count += 1
 
                 self.update_status(f"✅ ZIP создан: {Path(file_path).name} ({count} файлов)")
@@ -553,20 +666,15 @@ class MainWindow:
         threading.Thread(target=zip_thread, daemon=True).start()
 
     def _start_progress(self):
-        """Запуск прогресс-бара"""
         self.root.after(0, self.progress.start)
 
     def _stop_progress(self):
-        """Остановка прогресс-бара"""
         self.root.after(0, self.progress.stop)
 
     def update_status(self, message: str):
-        """Обновление статуса"""
         self.root.after(0, lambda: self.status_label.config(text=message))
 
     def _on_closing(self):
-        """Обработка закрытия окна"""
         self.settings.save()
-        # Очищаем кэш иконок
         IconManager.clear_cache()
         self.root.destroy()
