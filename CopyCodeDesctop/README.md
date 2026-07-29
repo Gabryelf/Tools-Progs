@@ -1,9 +1,21 @@
 
 # 📋 Copy Code ++
 
+<!-- Логотип - компактный размер -->
+<div align="center">
+<img src="https://github.com/Gabryelf/Tools-Progs/blob/main/CopyCodeDesctop/assets/icons/app.png?raw=true" 
+     alt="Copy Code Pro Logo" 
+     width="80" 
+     height="80"
+     style="border-radius: 16px;">
+</div>
+
 > Универсальный копировщик кода проекта в буфер обмена с поддержкой множества языков программирования
 
 Читая инструктаж к документации Pycharm искал удобную функцию для копирования всего кода проекта при создании промпта для ИИ, в итоге создал удобный инструмент для быстрого копирования кода из проектов. Решение - Python3 и его набор библиотек!
+
+[![Скачать EXE](https://img.shields.io/badge/⬇️_Скачать_Copy_Code_Pro_v0.0.4-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Gabryelf/Tools-Progs/blob/main/CopyCodeDesctop/dist/CopyCodePro.exe)
+
 
 #### Возможности
 - 📁 Выбор любой папки проекта для анализа
