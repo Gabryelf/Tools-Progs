@@ -35,7 +35,7 @@ class RecorderWithOverlay:
         self.temp_dir = tempfile.mkdtemp()
         self.temp_files = None
         self.thread = None
-        self.overlay_image = None
+        self.overlay_widget = None
         self.callbacks = {
             'on_start': [],
             'on_stop': [],
@@ -43,9 +43,13 @@ class RecorderWithOverlay:
             'on_progress': []
         }
 
-    def set_overlay(self, overlay_image):
-        """Установить изображение оверлея"""
-        self.overlay_image = overlay_image
+    def set_overlay_widget(self, overlay_widget):
+        """Установить виджет оверлея"""
+        self.overlay_widget = overlay_widget
+        if overlay_widget:
+            print("✅ Оверлей установлен в рекордер")
+        else:
+            print("❌ Оверлей удален из рекордера")
 
     def add_callback(self, event: str, callback):
         if event in self.callbacks:
@@ -75,6 +79,58 @@ class RecorderWithOverlay:
         self._emit('on_stop')
         return self.temp_files
 
+    def _capture_overlay(self):
+        """Захватить оверлей"""
+        if self.overlay_widget and self.overlay_widget.isVisible():
+            try:
+                overlay_pixmap = self.overlay_widget.get_image()
+                if overlay_pixmap and not overlay_pixmap.isNull():
+                    qimage = overlay_pixmap.toImage()
+                    qimage = qimage.convertToFormat(4)
+                    width = qimage.width()
+                    height = qimage.height()
+
+                    if width > 0 and height > 0:
+                        ptr = qimage.bits()
+                        ptr.setsize(qimage.byteCount())
+                        overlay_array = np.array(ptr).reshape(height, width, 4)
+                        return overlay_array
+            except Exception as e:
+                print(f"⚠️ Ошибка захвата оверлея: {e}")
+        return None
+
+    def _apply_overlay(self, frame, overlay_array):
+        """Наложить оверлей на кадр"""
+        if overlay_array is None:
+            return frame
+
+        try:
+            h, w = overlay_array.shape[:2]
+            frame_h, frame_w = frame.shape[:2]
+
+            # Масштабируем если нужно
+            if h != frame_h or w != frame_w:
+                overlay_array = cv2.resize(overlay_array, (frame_w, frame_h))
+                h, w = overlay_array.shape[:2]
+
+            # Альфа-канал для прозрачности
+            alpha = overlay_array[:, :, 3].astype(np.float32) / 255.0
+            overlay_rgb = overlay_array[:, :, :3].astype(np.float32)
+
+            # Проверяем есть ли что рисовать
+            if np.max(alpha) > 0:
+                # Наложение
+                for c in range(3):
+                    frame[:, :, c] = (
+                        frame[:, :, c] * (1 - alpha) +
+                        overlay_rgb[:, :, c] * alpha
+                    ).astype(np.uint8)
+
+        except Exception as e:
+            print(f"⚠️ Ошибка наложения: {e}")
+
+        return frame
+
     def _record(self):
         try:
             screen_width, screen_height = pyautogui.size()
@@ -94,56 +150,35 @@ class RecorderWithOverlay:
 
             frame_count = 0
             start_time = time.time()
-            last_time = start_time
 
-            print(f"🎬 Запись начата с оверлеем: {screen_width}x{screen_height}")
+            print(f"🎬 Запись начата: {screen_width}x{screen_height}")
 
             while self.is_recording:
                 try:
+                    # Захват экрана
                     screenshot = pyautogui.screenshot()
                     frame = np.array(screenshot)
                     frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
 
-                    # Наложение оверлея
-                    if self.overlay_image and not self.overlay_image.isNull():
-                        try:
-                            qimage = self.overlay_image.toImage()
-                            qimage = qimage.convertToFormat(4)
-                            width = qimage.width()
-                            height = qimage.height()
-
-                            # Проверяем размеры
-                            if width > 0 and height > 0:
-                                ptr = qimage.bits()
-                                ptr.setsize(qimage.byteCount())
-                                overlay_array = np.array(ptr).reshape(height, width, 4)
-
-                                alpha = overlay_array[:, :, 3] / 255.0
-                                overlay_rgb = overlay_array[:, :, :3]
-
-                                # Проверяем соответствие размеров
-                                min_h = min(height, frame.shape[0])
-                                min_w = min(width, frame.shape[1])
-
-                                for c in range(3):
-                                    frame[:min_h, :min_w, c] = (
-                                        frame[:min_h, :min_w, c] * (1 - alpha[:min_h, :min_w]) +
-                                        overlay_rgb[:min_h, :min_w, c] * alpha[:min_h, :min_w]
-                                    ).astype(np.uint8)
-                        except Exception as e:
-                            print(f"⚠️ Ошибка наложения оверлея: {e}")
+                    # Захват и наложение оверлея
+                    if self.overlay_widget and self.overlay_widget.isVisible():
+                        overlay = self._capture_overlay()
+                        if overlay is not None:
+                            frame = self._apply_overlay(frame, overlay)
+                            if frame_count % 30 == 0:  # Каждые 30 кадров
+                                print(f"🖍️ Оверлей применен к кадру {frame_count}")
 
                     self.video_writer.write(frame)
                     frame_count += 1
 
-                    if time.time() - last_time >= 1.0:
-                        fps = frame_count / (time.time() - start_time)
+                    if frame_count % 30 == 0:
+                        duration = time.time() - start_time
+                        fps = frame_count / duration
                         self._emit('on_progress', {
                             'frames': frame_count,
                             'fps': fps,
-                            'duration': time.time() - start_time
+                            'duration': duration
                         })
-                        last_time = time.time()
 
                 except Exception as e:
                     self._emit('on_error', f"Ошибка записи: {str(e)}")

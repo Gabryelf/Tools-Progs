@@ -4,8 +4,8 @@
 
 from PyQt5.QtWidgets import (QToolBar, QPushButton, QColorDialog,
                              QSlider, QLabel, QHBoxLayout, QWidget)
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QColor, QPainter, QPixmap
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor
 
 
 class DrawingToolbar(QToolBar):
@@ -20,109 +20,117 @@ class DrawingToolbar(QToolBar):
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
         self.setStyleSheet("""
             QToolBar {
-                background-color: rgba(30, 30, 30, 200);
-                border: 1px solid #3c3c3c;
-                border-radius: 8px;
-                padding: 5px;
-                spacing: 3px;
+                background-color: rgba(30, 30, 30, 230);
+                border: 2px solid #007acc;
+                border-radius: 10px;
+                padding: 8px;
+                spacing: 5px;
             }
             QPushButton {
-                background-color: transparent;
-                color: #d4d4d4;
-                border: 1px solid transparent;
-                border-radius: 4px;
-                padding: 6px 10px;
+                background-color: rgba(60, 60, 60, 200);
+                color: #ffffff;
+                border: 1px solid #555;
+                border-radius: 6px;
+                padding: 8px 12px;
                 font-size: 14px;
-                min-width: 30px;
+                min-width: 35px;
+                font-weight: bold;
             }
             QPushButton:hover {
-                background-color: rgba(60, 60, 60, 150);
-                border-color: #3c3c3c;
+                background-color: rgba(80, 80, 80, 200);
+                border-color: #007acc;
+            }
+            QPushButton:checked {
+                background-color: #d32f2f;
+                border-color: #ff4444;
             }
             QPushButton.active {
                 background-color: #007acc;
-                color: white;
+                border-color: #00aaff;
             }
             QLabel {
-                color: #d4d4d4;
-                padding: 0 5px;
+                color: #ffffff;
+                padding: 0 8px;
+                font-weight: bold;
             }
             QSlider {
-                min-width: 80px;
+                min-width: 100px;
             }
             QSlider::groove:horizontal {
-                height: 4px;
+                height: 6px;
                 background: #3c3c3c;
-                border-radius: 2px;
+                border-radius: 3px;
             }
             QSlider::handle:horizontal {
                 background: #007acc;
-                width: 12px;
-                height: 12px;
-                border-radius: 6px;
+                width: 14px;
+                height: 14px;
+                border-radius: 7px;
                 margin: -4px 0;
+            }
+            QSlider::handle:horizontal:hover {
+                background: #00aaff;
             }
         """)
 
         self.initUI()
-
-        # Позиция по умолчанию
         self.move(50, 50)
+
+        print("✅ DrawingToolbar создан")
 
     def initUI(self):
         """Создание интерфейса панели"""
 
-        # Контейнер для виджетов
         container = QWidget()
         layout = QHBoxLayout()
-        layout.setSpacing(5)
-        layout.setContentsMargins(5, 2, 5, 2)
+        layout.setSpacing(8)
+        layout.setContentsMargins(8, 4, 8, 4)
 
         # Кнопка выбора цвета
         self.color_btn = QPushButton("🎨")
         self.color_btn.setToolTip("Выбрать цвет")
         self.color_btn.clicked.connect(self.choose_color)
+        self.color_btn.setStyleSheet("background-color: #ff0000;")
         layout.addWidget(self.color_btn)
 
         # Индикатор цвета
         self.color_indicator = QLabel()
-        self.color_indicator.setFixedSize(20, 20)
+        self.color_indicator.setFixedSize(25, 25)
         self.color_indicator.setStyleSheet("""
-            background-color: rgba(255, 50, 50, 200);
-            border-radius: 10px;
-            border: 1px solid #666;
+            background-color: #ff0000;
+            border-radius: 13px;
+            border: 2px solid #888;
         """)
         layout.addWidget(self.color_indicator)
 
-        # Разделитель
         layout.addWidget(QLabel("|"))
 
         # Толщина кисти
         layout.addWidget(QLabel("✏️"))
         self.size_slider = QSlider(Qt.Horizontal)
         self.size_slider.setRange(1, 20)
-        self.size_slider.setValue(4)
+        self.size_slider.setValue(5)
         self.size_slider.setToolTip("Толщина кисти")
         self.size_slider.valueChanged.connect(self.on_size_changed)
         layout.addWidget(self.size_slider)
 
-        self.size_label = QLabel("4")
-        self.size_label.setFixedWidth(20)
+        self.size_label = QLabel("5")
+        self.size_label.setFixedWidth(25)
+        self.size_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.size_label)
 
-        # Разделитель
         layout.addWidget(QLabel("|"))
 
         # Кнопка ластика
         self.eraser_btn = QPushButton("🧹")
-        self.eraser_btn.setToolTip("Ластик (стирает рисунки)")
+        self.eraser_btn.setToolTip("Ластик")
         self.eraser_btn.setCheckable(True)
         self.eraser_btn.toggled.connect(self.toggle_eraser)
         layout.addWidget(self.eraser_btn)
 
         # Кнопка отмены
         self.undo_btn = QPushButton("↩️")
-        self.undo_btn.setToolTip("Отменить последнее действие")
+        self.undo_btn.setToolTip("Отменить (Ctrl+Z)")
         self.undo_btn.clicked.connect(self.overlay.undo_last)
         layout.addWidget(self.undo_btn)
 
@@ -132,13 +140,21 @@ class DrawingToolbar(QToolBar):
         self.clear_btn.clicked.connect(self.overlay.clear_drawing)
         layout.addWidget(self.clear_btn)
 
-        # Разделитель
         layout.addWidget(QLabel("|"))
 
         # Кнопка скрыть
-        self.hide_btn = QPushButton("❌")
+        self.hide_btn = QPushButton("✖")
         self.hide_btn.setToolTip("Скрыть панель")
         self.hide_btn.clicked.connect(self.hide)
+        self.hide_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #d32f2f;
+                border-color: #ff4444;
+            }
+            QPushButton:hover {
+                background-color: #ff4444;
+            }
+        """)
         layout.addWidget(self.hide_btn)
 
         container.setLayout(layout)
@@ -151,10 +167,11 @@ class DrawingToolbar(QToolBar):
             self.overlay.set_color(color)
             # Обновляем индикатор
             self.color_indicator.setStyleSheet(f"""
-                background-color: rgba({color.red()}, {color.green()}, {color.blue()}, 200);
-                border-radius: 10px;
-                border: 1px solid #666;
+                background-color: {color.name()};
+                border-radius: 13px;
+                border: 2px solid #888;
             """)
+            self.color_btn.setStyleSheet(f"background-color: {color.name()};")
             # Если ластик активен, отключаем
             if self.eraser_btn.isChecked():
                 self.eraser_btn.setChecked(False)
@@ -169,15 +186,14 @@ class DrawingToolbar(QToolBar):
         """Включение/выключение ластика"""
         self.overlay.toggle_eraser(checked)
         if checked:
-            self.eraser_btn.setStyleSheet("background-color: #d32f2f; color: white;")
+            self.eraser_btn.setStyleSheet("""
+                QPushButton:checked {
+                    background-color: #d32f2f;
+                    border-color: #ff4444;
+                }
+            """)
         else:
             self.eraser_btn.setStyleSheet("")
-
-    def showEvent(self, event):
-        """При показе обновляем позицию"""
-        super().showEvent(event)
-        # Автоматически скрываем через 5 секунд бездействия
-        # (можно добавить таймер)
 
     def keyPressEvent(self, event):
         """Обработка клавиш"""
@@ -187,3 +203,5 @@ class DrawingToolbar(QToolBar):
             self.overlay.undo_last()
         elif event.key() == Qt.Key_Delete or event.key() == Qt.Key_Backspace:
             self.overlay.clear_drawing()
+        else:
+            super().keyPressEvent(event)

@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
 from PyQt5.QtCore import Qt, QTimer
 
 from core import SettingsManager
-from gui.modern_styles import DARK_STYLE  # Импортируем современные стили
+from gui.modern_styles import DARK_STYLE
 from gui.drawing_overlay import DrawingOverlay
 from gui.drawing_toolbar import DrawingToolbar
 from core.recorder_with_overlay import RecorderWithOverlay
@@ -38,7 +38,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle('🎥 Screen Recorder Pro')
         self.setGeometry(100, 100, 450, 550)
         self.setMinimumSize(400, 450)
-        self.setStyleSheet(DARK_STYLE)  # Используем темную тему
+        self.setStyleSheet(DARK_STYLE)
 
         # Центральный виджет
         central_widget = QWidget()
@@ -234,13 +234,10 @@ class MainWindow(QMainWindow):
         self.timer.timeout.connect(self.update_status)
         self.timer.start(500)
 
-        self.recording_time = 0
-
     def start_recording(self):
         if self.recorder.is_recording:
             return
 
-        self.recording_time = 0
         self.recorder.start()
 
     def stop_recording(self):
@@ -321,6 +318,10 @@ class MainWindow(QMainWindow):
         self.settings.save()
         QMessageBox.information(self, '✅ Готово', 'Настройки сохранены!')
 
+    def on_overlay_update(self, overlay_image):
+        """Обновление оверлея - теперь ничего не делаем, т.к. захватываем напрямую"""
+        pass  # Убираем, т.к. теперь захватываем напрямую
+
     def toggle_drawing(self):
         """Включить/выключить режим рисования"""
         if not self.drawing_enabled:
@@ -328,12 +329,12 @@ class MainWindow(QMainWindow):
             self.drawing_overlay = DrawingOverlay()
             self.drawing_overlay.show()
 
+            # Передаем виджет в рекордер
+            self.recorder.set_overlay_widget(self.drawing_overlay)
+
             # Создаем панель инструментов
             self.drawing_toolbar = DrawingToolbar(self.drawing_overlay)
             self.drawing_toolbar.show()
-
-            # Обновляем рекордер с оверлеем
-            self.recorder.set_overlay(self.drawing_overlay.get_image())
 
             self.drawing_enabled = True
             self.draw_btn.setText('🖍️ Скрыть маркер')
@@ -348,13 +349,15 @@ class MainWindow(QMainWindow):
             if self.drawing_toolbar:
                 self.drawing_toolbar.hide()
                 self.drawing_toolbar = None
+
+            self.recorder.set_overlay_widget(None)
+
             self.drawing_enabled = False
             self.draw_btn.setText('🖍️ Маркер')
             self.draw_btn.setProperty('class', '')
             self.drawing_info.setText('🖍️ Нажмите "Маркер" для активации рисования')
             self.drawing_info.setStyleSheet('color: #888; font-size: 11px; padding: 5px;')
 
-        # Обновляем стиль кнопки
         self.draw_btn.style().unpolish(self.draw_btn)
         self.draw_btn.style().polish(self.draw_btn)
 
