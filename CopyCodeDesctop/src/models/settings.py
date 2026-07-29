@@ -72,4 +72,3 @@ class ApplicationSettings:
                 json.dump(data, f, indent=2, ensure_ascii=False)
         except Exception as e:
             print(f"⚠️ Ошибка сохранения настроек: {e}")
-            
