@@ -95,6 +95,17 @@
 ![Pillow](https://img.shields.io/badge/Pillow-FF6C37?style=flat&logo=python&logoColor=white)
 ![PyInstaller](https://img.shields.io/badge/PyInstaller-FFD700?style=flat&logo=python&logoColor=white)
 
+<div align="center">
+<img src="https://github.com/Gabryelf/Tools-Progs/blob/main/CopyCodeDesctop/assets/icons/app.png?raw=true" 
+     alt="Copy Code Pro Logo" 
+     width="80" 
+     height="80"
+     style="border-radius: 16px;">
+
+[![Скачать EXE](https://img.shields.io/badge/⬇️_Скачать_Copy_Code_Pro_v0.0.4-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Gabryelf/Tools-Progs/blob/main/CopyCodeDesctop/dist/CopyCodePro.exe)
+
+</div>
+
 #### 📖 [Подробная документация →](https://github.com/Gabryelf/Tools-Progs/blob/main/CopyCodeDesctop/README.md)
 
 ---
