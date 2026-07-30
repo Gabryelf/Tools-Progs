@@ -5,16 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="37323b5b-6a88-4b6f-a77e-afa4db21c349" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/test/test_drawing.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/recorder.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/recorder.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/recorder_with_overlay.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/gui/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/gui/__init__.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gui/drawing_overlay.py" beforeDir="false" afterPath="$PROJECT_DIR$/gui/drawing_overlay.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gui/drawing_toolbar.py" beforeDir="false" afterPath="$PROJECT_DIR$/gui/drawing_toolbar.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gui/main_window.py" beforeDir="false" afterPath="$PROJECT_DIR$/gui/main_window.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gui/modern_styles.py" beforeDir="false" afterPath="$PROJECT_DIR$/gui/modern_styles.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gui/drawing_overlay.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/Запись_экрана_2026-28-07_21-03-44TEMP_MPY_wvf_snd.mp4" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
