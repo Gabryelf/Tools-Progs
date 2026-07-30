@@ -1,10 +1,10 @@
 """
 Прозрачное окно для рисования поверх экрана
 """
-
 from PyQt5.QtWidgets import QWidget
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QPainter, QPen, QPixmap, QColor, QPainterPath, QBrush, QCursor
+from PyQt5.QtCore import Qt, QMutex, QMutexLocker
+from PyQt5.QtGui import QPainter, QPen, QPixmap, QColor, QPainterPath, QCursor
+import numpy as np
 
 
 class DrawingOverlay(QWidget):
@@ -31,27 +31,24 @@ class DrawingOverlay(QWidget):
         self.last_point = None
         self.current_path = None
         self.paths = []
-        self.temp_path = None  # Для временного хранения
+        self.has_drawing = False  # Флаг наличия рисунков
 
-        # Настройки кисти
-        self.pen_color = QColor(255, 0, 0, 255)  # Ярко-красный
+        # Настройки кисти - яркий красный
+        self.pen_color = QColor(255, 0, 0, 255)
         self.pen_width = 5
 
-        # Создаем изображение для рисования
+        # Изображение для рисования
         self.image = QPixmap(self.size())
         self.image.fill(Qt.transparent)
 
-        self.setMouseTracking(True)
+        # Мьютекс
+        self.mutex = QMutex()
 
-        # Курсор в виде крестика для точности
+        self.setMouseTracking(True)
         self.setCursor(Qt.CrossCursor)
 
-        # Таймер для обновления
-        self.update_timer = QTimer()
-        self.update_timer.timeout.connect(self.update)
-        self.update_timer.start(50)
-
         print("✅ DrawingOverlay создан")
+        print(f"📐 Размер оверлея: {self.width()}x{self.height()}")
 
     def paintEvent(self, event):
         """Отрисовка"""
@@ -61,7 +58,7 @@ class DrawingOverlay(QWidget):
         # Рисуем сохраненное изображение
         painter.drawPixmap(0, 0, self.image)
 
-        # Рисуем текущий путь (то что рисуется прямо сейчас)
+        # Рисуем текущий путь (то, что рисуется прямо сейчас)
         if self.current_path and not self.current_path.isEmpty():
             painter.setPen(QPen(self.pen_color, self.pen_width,
                                 Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
@@ -72,78 +69,75 @@ class DrawingOverlay(QWidget):
         if event.button() == Qt.LeftButton:
             self.drawing = True
             self.last_point = event.pos()
-
-            # Создаем новый путь
             self.current_path = QPainterPath()
             self.current_path.moveTo(self.last_point)
-
-            print(f"🖍️ Рисование начато в ({self.last_point.x()}, {self.last_point.y()})")
+            print(f"🖍️ Начало рисования в точке: ({event.pos().x()}, {event.pos().y()})")
 
     def mouseMoveEvent(self, event):
         """Рисование"""
         if self.drawing and self.current_path:
             current_point = event.pos()
-
-            # Проверяем, что точка в пределах окна
             if self.rect().contains(current_point):
                 self.current_path.lineTo(current_point)
-                # Принудительно обновляем
-                self.repaint()
+                # Принудительно перерисовываем
+                self.update()
 
     def mouseReleaseEvent(self, event):
         """Завершение рисования"""
         if event.button() == Qt.LeftButton and self.drawing:
             self.drawing = False
-
             if self.current_path and not self.current_path.isEmpty():
-                # Сохраняем путь в изображение
-                painter = QPainter(self.image)
-                painter.setPen(QPen(self.pen_color, self.pen_width,
-                                    Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-                painter.drawPath(self.current_path)
-                painter.end()
+                with QMutexLocker(self.mutex):
+                    # Сохраняем путь в изображение
+                    painter = QPainter(self.image)
+                    painter.setPen(QPen(self.pen_color, self.pen_width,
+                                        Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+                    painter.drawPath(self.current_path)
+                    painter.end()
 
-                # Сохраняем путь для возможности отмены
-                self.paths.append(self.current_path)
-                self.current_path = None
-                self.repaint()
+                    # Сохраняем путь для отмены
+                    self.paths.append(self.current_path)
+                    self.has_drawing = True
+                    self.current_path = None
 
-                print(f"✅ Путь сохранен, всего: {len(self.paths)}")
+                    print(f"✅ Рисование завершено, всего путей: {len(self.paths)}")
+                    self.update()
 
     def clear_drawing(self):
         """Очистить все рисунки"""
-        self.image.fill(Qt.transparent)
-        self.paths.clear()
-        self.current_path = None
-        self.repaint()
+        with QMutexLocker(self.mutex):
+            self.image.fill(Qt.transparent)
+            self.paths.clear()
+            self.current_path = None
+            self.has_drawing = False
+            self.update()
         print("🗑️ Все рисунки очищены")
 
     def undo_last(self):
         """Отменить последнее действие"""
         if self.paths:
-            self.paths.pop()
-            self.image.fill(Qt.transparent)
-            painter = QPainter(self.image)
-            for path in self.paths:
-                painter.setPen(QPen(self.pen_color, self.pen_width,
-                                    Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
-                painter.drawPath(path)
-            painter.end()
-            self.repaint()
+            with QMutexLocker(self.mutex):
+                self.paths.pop()
+                self.image.fill(Qt.transparent)
+                painter = QPainter(self.image)
+                for path in self.paths:
+                    painter.setPen(QPen(self.pen_color, self.pen_width,
+                                        Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin))
+                    painter.drawPath(path)
+                painter.end()
+                self.has_drawing = len(self.paths) > 0
+                self.update()
             print(f"↩️ Отменено, осталось: {len(self.paths)}")
 
     def set_color(self, color):
-        """Установить цвет"""
         self.pen_color = color
         print(f"🎨 Цвет изменен на: {color.name()}")
 
     def set_width(self, width):
-        """Установить толщину"""
         self.pen_width = width
         print(f"📏 Толщина: {width}")
 
     def toggle_eraser(self, enabled):
-        """Включить/выключить ластик"""
         if enabled:
             self.pen_color = QColor(255, 255, 255, 255)
             self.setCursor(Qt.BlankCursor)
@@ -153,13 +147,45 @@ class DrawingOverlay(QWidget):
             self.setCursor(Qt.CrossCursor)
             print("🖍️ Ластик выключен")
 
-    def get_image(self):
-        """Получить изображение с рисунками"""
-        return self.image
-
     def showEvent(self, event):
-        """При показе окна"""
         super().showEvent(event)
         self.raise_()
         self.activateWindow()
-        print("🖍️ Оверлей показан и активирован")
+        self.setFocus()
+        print("🖍️ Оверлей показан и активен")
+
+    def get_numpy_array(self):
+        """
+        Получить изображение как numpy массив RGBA.
+        Возвращает None если рисунков нет.
+        """
+        with QMutexLocker(self.mutex):
+            if not self.has_drawing:
+                return None
+
+            try:
+                # Конвертируем QPixmap в QImage
+                qimage = self.image.toImage()
+                qimage = qimage.convertToFormat(QImage.Format_RGBA8888)
+
+                width = qimage.width()
+                height = qimage.height()
+
+                if width <= 0 or height <= 0:
+                    return None
+
+                # Получаем данные
+                ptr = qimage.bits()
+                ptr.setsize(qimage.byteCount())
+
+                # Создаем numpy массив
+                arr = np.array(ptr).reshape(height, width, 4)
+
+                # Проверяем наличие рисунков
+                if np.any(arr[:, :, 3] > 10):
+                    return arr.copy()
+
+            except Exception as e:
+                print(f"⚠️ Ошибка получения массива: {e}")
+
+            return None

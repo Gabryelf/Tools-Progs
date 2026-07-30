@@ -1,30 +1,23 @@
 """
-Главное окно приложения
+Главное окно приложения с поддержкой системного трея
 """
-
 import os
-import sys
 from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
                              QPushButton, QLabel, QMessageBox, QFileDialog,
                              QGroupBox, QCheckBox, QComboBox, QSpinBox,
-                             QLineEdit, QTabWidget)
-from PyQt5.QtCore import Qt, QTimer
-
-from core import SettingsManager
+                             QLineEdit, QTabWidget, QSystemTrayIcon, QMenu,
+                             QAction, QApplication, QFileDialog)
+from PyQt5.QtCore import Qt, QTimer, QSize
+from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor, QPen, QFont
+from core import SettingsManager, ScreenRecorder
 from gui.modern_styles import DARK_STYLE
-from gui.drawing_overlay import DrawingOverlay
-from gui.drawing_toolbar import DrawingToolbar
-from core.recorder_with_overlay import RecorderWithOverlay
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.settings = SettingsManager()
-        self.recorder = RecorderWithOverlay(self.settings)
-        self.drawing_overlay = None
-        self.drawing_toolbar = None
-        self.drawing_enabled = False
+        self.recorder = ScreenRecorder(self.settings)
 
         # Подключаем callback'и
         self.recorder.add_callback('on_start', self.on_recording_started)
@@ -32,22 +25,128 @@ class MainWindow(QMainWindow):
         self.recorder.add_callback('on_error', self.on_recording_error)
         self.recorder.add_callback('on_progress', self.on_recording_progress)
 
+        # Настройка системного трея
+        self.tray_icon = None
+        self.tray_menu = None
+        self.is_minimized = False
+        self.compact_widget = None
+        self.main_layout = None
+        self.last_folder = self.settings.get('save_path')
+
         self.initUI()
+        self.create_tray_icon()
 
     def initUI(self):
-        self.setWindowTitle('🎥 Screen Recorder Pro')
+        self.setWindowTitle('🎥 Screen Recorder')
         self.setGeometry(100, 100, 450, 550)
-        self.setMinimumSize(400, 450)
+        self.setMinimumSize(400, 500)
         self.setStyleSheet(DARK_STYLE)
 
-        # Центральный виджет
+        # Создаем центральный виджет и основной layout
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
+        self.main_layout = QVBoxLayout()
+        central_widget.setLayout(self.main_layout)
+
+        # Создаем компактный режим (минимальный)
+        self.compact_widget = self.create_compact_mode()
+        self.compact_widget.hide()
+        self.main_layout.addWidget(self.compact_widget)
+
+        # Создаем полноценный интерфейс
+        self.full_widget = self.create_full_mode()
+        self.main_layout.addWidget(self.full_widget)
+
+        # Таймер обновления статуса
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.update_status)
+        self.timer.start(500)
+
+    def create_compact_mode(self):
+        """Создать компактный режим с кнопками стоп и развернуть"""
+        widget = QWidget()
+        widget.setStyleSheet("""
+            QWidget {
+                background-color: #1e1e1e;
+                border-radius: 8px;
+                border: 1px solid #3c3c3c;
+            }
+            QPushButton {
+                background-color: #3c3c3c;
+                color: #d4d4d4;
+                border: none;
+                padding: 8px 15px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 13px;
+                min-height: 30px;
+            }
+            QPushButton:hover {
+                background-color: #4a4a4a;
+            }
+            QPushButton#stopCompactBtn {
+                background-color: #d32f2f;
+                color: white;
+            }
+            QPushButton#stopCompactBtn:hover {
+                background-color: #e53935;
+            }
+            QPushButton#expandBtn {
+                background-color: #007acc;
+                color: white;
+            }
+            QPushButton#expandBtn:hover {
+                background-color: #1a8ad4;
+            }
+            QLabel {
+                color: #d4d4d4;
+                font-size: 14px;
+                font-weight: bold;
+            }
+        """)
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(10)
+
+        # Статус в компактном режиме
+        self.compact_status = QLabel('⏺ ЗАПИСЬ...')
+        self.compact_status.setStyleSheet("color: #ff6b6b; font-size: 14px; font-weight: bold;")
+        layout.addWidget(self.compact_status)
+
+        layout.addStretch()
+
+        # Время записи
+        self.compact_time = QLabel('00:00:00')
+        self.compact_time.setStyleSheet("color: #888888; font-size: 14px;")
+        layout.addWidget(self.compact_time)
+
+        layout.addStretch()
+
+        # Кнопка остановить
+        self.stop_compact_btn = QPushButton('⏹ Остановить')
+        self.stop_compact_btn.setObjectName('stopCompactBtn')
+        self.stop_compact_btn.clicked.connect(self.stop_recording)
+        self.stop_compact_btn.setEnabled(False)
+        layout.addWidget(self.stop_compact_btn)
+
+        # Кнопка развернуть
+        self.expand_btn = QPushButton('📂 Развернуть')
+        self.expand_btn.setObjectName('expandBtn')
+        self.expand_btn.clicked.connect(self.expand_window)
+        layout.addWidget(self.expand_btn)
+
+        widget.setLayout(layout)
+        return widget
+
+    def create_full_mode(self):
+        """Создать полноценный интерфейс"""
+        widget = QWidget()
         layout = QVBoxLayout()
-        central_widget.setLayout(layout)
+        widget.setLayout(layout)
 
         # Заголовок
-        title = QLabel('🎥 Screen Recorder Pro')
+        title = QLabel('🎥 Screen Recorder')
         title.setObjectName('titleLabel')
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
@@ -76,7 +175,6 @@ class MainWindow(QMainWindow):
 
         # Кнопки управления
         btn_layout = QHBoxLayout()
-
         self.start_btn = QPushButton('▶ Начать запись')
         self.start_btn.setObjectName('startBtn')
         self.start_btn.clicked.connect(self.start_recording)
@@ -87,19 +185,27 @@ class MainWindow(QMainWindow):
         self.stop_btn.clicked.connect(self.stop_recording)
         self.stop_btn.setEnabled(False)
         btn_layout.addWidget(self.stop_btn)
-
         record_layout.addLayout(btn_layout)
 
-        # Кнопка рисования
-        draw_layout = QHBoxLayout()
-
-        self.draw_btn = QPushButton('🖍️ Маркер')
-        self.draw_btn.setObjectName('drawBtn')
-        self.draw_btn.clicked.connect(self.toggle_drawing)
-        draw_layout.addWidget(self.draw_btn)
-
-        draw_layout.addStretch()
-        record_layout.addLayout(draw_layout)
+        # Кнопка свернуть в трей
+        minimize_layout = QHBoxLayout()
+        self.minimize_btn = QPushButton('🔽 Свернуть в трей')
+        self.minimize_btn.setObjectName('minimizeBtn')
+        self.minimize_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2d2d2d;
+                color: #d4d4d4;
+                border: 1px solid #3c3c3c;
+                min-width: 100px;
+            }
+            QPushButton:hover {
+                background-color: #3c3c3c;
+            }
+        """)
+        self.minimize_btn.clicked.connect(self.minimize_to_tray)
+        minimize_layout.addWidget(self.minimize_btn)
+        minimize_layout.addStretch()
+        record_layout.addLayout(minimize_layout)
 
         # Настройки быстрого доступа
         settings_group = QGroupBox("⚙️ Быстрые настройки")
@@ -111,17 +217,10 @@ class MainWindow(QMainWindow):
         self.audio_check.setChecked(self.settings.get('record_audio'))
         self.audio_check.toggled.connect(self.toggle_audio)
         audio_layout.addWidget(self.audio_check)
-
         settings_layout.addLayout(audio_layout)
 
         settings_group.setLayout(settings_layout)
         record_layout.addWidget(settings_group)
-
-        # Информация о рисовании
-        self.drawing_info = QLabel('🖍️ Нажмите "Маркер" для активации рисования')
-        self.drawing_info.setAlignment(Qt.AlignCenter)
-        self.drawing_info.setStyleSheet('color: #888; font-size: 11px; padding: 5px;')
-        record_layout.addWidget(self.drawing_info)
 
         record_layout.addStretch()
         tabs.addTab(record_tab, "🎬 Запись")
@@ -131,28 +230,105 @@ class MainWindow(QMainWindow):
         settings_layout = QVBoxLayout()
         settings_tab.setLayout(settings_layout)
 
-        # Папка сохранения
+        # ===== ПАПКА СОХРАНЕНИЯ (улучшенная) =====
         folder_group = QGroupBox("📁 Папка сохранения")
         folder_layout = QVBoxLayout()
 
+        # Текущая папка
+        folder_info_layout = QHBoxLayout()
+        folder_info_layout.addWidget(QLabel("Текущая папка:"))
+        folder_info_layout.addStretch()
+        folder_layout.addLayout(folder_info_layout)
+
+        # Отображение пути с кнопкой открыть
         folder_path_layout = QHBoxLayout()
         self.folder_path = QLineEdit()
         self.folder_path.setText(self.settings.get('save_path'))
-        self.folder_path.textChanged.connect(self.on_folder_changed)
-        folder_path_layout.addWidget(self.folder_path)
+        self.folder_path.setReadOnly(True)
+        self.folder_path.setStyleSheet("""
+            QLineEdit {
+                background-color: #2d2d2d;
+                color: #d4d4d4;
+                border: 1px solid #3c3c3c;
+                border-radius: 4px;
+                padding: 8px 10px;
+                font-size: 12px;
+            }
+            QLineEdit:hover {
+                border-color: #007acc;
+            }
+        """)
+        folder_path_layout.addWidget(self.folder_path, 1)
 
-        self.folder_btn = QPushButton("📂 Обзор")
-        self.folder_btn.clicked.connect(self.choose_folder)
-        folder_path_layout.addWidget(self.folder_btn)
-
+        # Кнопка открыть папку
+        self.open_folder_btn = QPushButton("📂 Открыть")
+        self.open_folder_btn.setToolTip("Открыть папку в проводнике")
+        self.open_folder_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2d2d2d;
+                color: #d4d4d4;
+                border: 1px solid #3c3c3c;
+                padding: 8px 12px;
+                border-radius: 4px;
+                min-width: 70px;
+            }
+            QPushButton:hover {
+                background-color: #3c3c3c;
+                border-color: #007acc;
+            }
+        """)
+        self.open_folder_btn.clicked.connect(self.open_save_folder)
+        folder_path_layout.addWidget(self.open_folder_btn)
         folder_layout.addLayout(folder_path_layout)
+
+        # Кнопка выбора папки
+        select_folder_layout = QHBoxLayout()
+        self.select_folder_btn = QPushButton("📁 Выбрать другую папку")
+        self.select_folder_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #007acc;
+                color: white;
+                border: none;
+                padding: 10px 15px;
+                border-radius: 6px;
+                font-weight: bold;
+                min-height: 30px;
+            }
+            QPushButton:hover {
+                background-color: #1a8ad4;
+            }
+        """)
+        self.select_folder_btn.clicked.connect(self.choose_folder)
+        select_folder_layout.addWidget(self.select_folder_btn)
+        select_folder_layout.addStretch()
+        folder_layout.addLayout(select_folder_layout)
+
+        # Кнопка использовать папку по умолчанию
+        default_folder_layout = QHBoxLayout()
+        self.default_folder_btn = QPushButton("🔄 Использовать папку по умолчанию")
+        self.default_folder_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #2d2d2d;
+                color: #d4d4d4;
+                border: 1px solid #3c3c3c;
+                padding: 8px 15px;
+                border-radius: 4px;
+            }
+            QPushButton:hover {
+                background-color: #3c3c3c;
+            }
+        """)
+        self.default_folder_btn.clicked.connect(self.set_default_folder)
+        default_folder_layout.addWidget(self.default_folder_btn)
+        default_folder_layout.addStretch()
+        folder_layout.addLayout(default_folder_layout)
+
         folder_group.setLayout(folder_layout)
         settings_layout.addWidget(folder_group)
 
-        # Качество видео
+        # ===== КАЧЕСТВО ВИДЕО =====
         quality_group = QGroupBox("🎬 Качество видео")
         quality_layout = QVBoxLayout()
-
         fps_layout = QHBoxLayout()
         fps_layout.addWidget(QLabel("FPS:"))
         self.fps_spin = QSpinBox()
@@ -162,14 +338,12 @@ class MainWindow(QMainWindow):
         fps_layout.addWidget(self.fps_spin)
         fps_layout.addStretch()
         quality_layout.addLayout(fps_layout)
-
         quality_group.setLayout(quality_layout)
         settings_layout.addWidget(quality_group)
 
-        # Звук
+        # ===== НАСТРОЙКИ ЗВУКА =====
         audio_settings_group = QGroupBox("🎵 Настройки звука")
         audio_settings_layout = QVBoxLayout()
-
         sample_layout = QHBoxLayout()
         sample_layout.addWidget(QLabel("Частота (кГц):"))
         self.sample_combo = QComboBox()
@@ -185,12 +359,25 @@ class MainWindow(QMainWindow):
         sample_layout.addWidget(self.sample_combo)
         sample_layout.addStretch()
         audio_settings_layout.addLayout(sample_layout)
-
         audio_settings_group.setLayout(audio_settings_layout)
         settings_layout.addWidget(audio_settings_group)
 
         # Кнопка сохранения настроек
         save_btn = QPushButton("💾 Сохранить настройки")
+        save_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                padding: 12px;
+                border-radius: 6px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+            QPushButton:hover {
+                background-color: #45a049;
+            }
+        """)
         save_btn.clicked.connect(self.save_settings)
         settings_layout.addWidget(save_btn)
 
@@ -201,20 +388,11 @@ class MainWindow(QMainWindow):
         about_tab = QWidget()
         about_layout = QVBoxLayout()
         about_tab.setLayout(about_layout)
-
         about_text = QLabel("""
-        <h2>🎥 Screen Recorder Pro</h2>
-        <p><b>Версия:</b> 0.0.3</p>
+        <h2>🎥 Screen Recorder</h2>
+        <p><b>Версия:</b> 1.0.0</p>
         <p><b>Автор:</b> Gabryelf</p>
         <p>Запись экрана с системным звуком</p>
-        <p><b>🆕 Новое в версии:</b></p>
-        <ul>
-            <li>✨ Современный темный интерфейс</li>
-            <li>🖍️ Инструмент рисования маркером</li>
-            <li>🎨 Выбор цвета и толщины кисти</li>
-            <li>🧹 Ластик для стирания</li>
-            <li>↩️ Отмена последнего действия</li>
-        </ul>
         <p>Используемые технологии:</p>
         <ul>
             <li>Python 3.10+</li>
@@ -226,43 +404,179 @@ class MainWindow(QMainWindow):
         about_text.setAlignment(Qt.AlignCenter)
         about_layout.addWidget(about_text)
         about_layout.addStretch()
-
         tabs.addTab(about_tab, "ℹ️ О программе")
 
-        # Таймер обновления статуса
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.update_status)
-        self.timer.start(500)
+        return widget
+
+    def create_tray_icon(self):
+        """Создание иконки в системном трее"""
+        self.tray_icon = QSystemTrayIcon(self)
+        self.tray_icon.setIcon(self.create_icon())
+
+        # Создаем меню трея
+        self.tray_menu = QMenu()
+
+        # Действия в трее
+        self.tray_show_action = QAction("📂 Показать окно", self)
+        self.tray_show_action.triggered.connect(self.show_window)
+        self.tray_menu.addAction(self.tray_show_action)
+
+        self.tray_menu.addSeparator()
+
+        self.tray_stop_action = QAction("⏹ Остановить запись", self)
+        self.tray_stop_action.triggered.connect(self.stop_recording)
+        self.tray_stop_action.setEnabled(False)
+        self.tray_menu.addAction(self.tray_stop_action)
+
+        self.tray_menu.addSeparator()
+
+        self.tray_quit_action = QAction("❌ Выход", self)
+        self.tray_quit_action.triggered.connect(self.quit_application)
+        self.tray_menu.addAction(self.tray_quit_action)
+
+        self.tray_icon.setContextMenu(self.tray_menu)
+        self.tray_icon.activated.connect(self.on_tray_activated)
+        self.tray_icon.show()
+
+    def create_icon(self):
+        """Создать иконку для трея"""
+        size = 64
+        pixmap = QPixmap(size, size)
+        pixmap.fill(Qt.transparent)
+
+        painter = QPainter(pixmap)
+        painter.setRenderHint(QPainter.Antialiasing)
+
+        # Рисуем круг
+        painter.setBrush(QColor(30, 30, 30))
+        painter.setPen(QPen(QColor(60, 60, 60), 2))
+        painter.drawEllipse(2, 2, size - 4, size - 4)
+
+        # Рисуем иконку камеры
+        painter.setPen(QPen(QColor(255, 255, 255), 3))
+        painter.drawRect(12, 20, 40, 28)
+        painter.drawEllipse(32, 30, 10, 10)  # Объектив
+
+        # Кнопка записи
+        painter.setBrush(QColor(200, 50, 50))
+        painter.setPen(Qt.NoPen)
+        painter.drawEllipse(50, 8, 10, 10)
+
+        painter.end()
+
+        return QIcon(pixmap)
+
+    def minimize_to_tray(self):
+        """Свернуть в трей"""
+        self.is_minimized = True
+        self.full_widget.hide()
+        self.compact_widget.show()
+
+        # Обновляем размер окна
+        self.setFixedHeight(80)
+        self.setFixedWidth(400)
+
+        # Показываем уведомление
+        self.tray_icon.showMessage(
+            "Screen Recorder",
+            "Приложение свернуто в трей. Запись продолжается.",
+            QSystemTrayIcon.Information,
+            2000
+        )
+
+    def expand_window(self):
+        """Развернуть окно"""
+        self.is_minimized = False
+        self.compact_widget.hide()
+        self.full_widget.show()
+
+        # Возвращаем нормальный размер
+        self.setFixedHeight(550)
+        self.setFixedWidth(450)
+        self.setMinimumSize(400, 500)
+
+        self.show()
+        self.activateWindow()
+
+    def show_window(self):
+        """Показать окно из трея"""
+        if self.is_minimized:
+            self.expand_window()
+        else:
+            self.show()
+            self.activateWindow()
+
+    def on_tray_activated(self, reason):
+        """Обработка клика по иконке в трее"""
+        if reason == QSystemTrayIcon.DoubleClick:
+            self.show_window()
+
+    def quit_application(self):
+        """Выход из приложения"""
+        if self.recorder.is_recording:
+            reply = QMessageBox.question(
+                self, 'Подтверждение',
+                'Запись еще идет. Остановить и выйти?',
+                QMessageBox.Yes | QMessageBox.No
+            )
+            if reply == QMessageBox.Yes:
+                self.recorder.stop()
+                QApplication.quit()
+            else:
+                return
+        else:
+            QApplication.quit()
 
     def start_recording(self):
         if self.recorder.is_recording:
             return
-
         self.recorder.start()
 
     def stop_recording(self):
         if not self.recorder.is_recording:
             return
 
+        # Отключаем кнопки
         self.stop_btn.setEnabled(False)
+        self.stop_compact_btn.setEnabled(False)
+        self.tray_stop_action.setEnabled(False)
+
         self.status_label.setText('⏳ СОХРАНЕНИЕ...')
         self.status_label.setProperty('class', 'saving')
         self.status_label.style().unpolish(self.status_label)
         self.status_label.style().polish(self.status_label)
+
+        self.compact_status.setText('⏳ СОХРАНЕНИЕ...')
+        self.compact_status.setStyleSheet("color: #ffd93d; font-size: 14px; font-weight: bold;")
 
         self.recorder.stop()
 
     def on_recording_started(self):
         self.start_btn.setEnabled(False)
         self.stop_btn.setEnabled(True)
+        self.stop_compact_btn.setEnabled(True)
+        self.tray_stop_action.setEnabled(True)
+
         self.status_label.setText('⏺ ИДЕТ ЗАПИСЬ...')
         self.status_label.setProperty('class', 'recording')
         self.status_label.style().unpolish(self.status_label)
         self.status_label.style().polish(self.status_label)
 
+        self.compact_status.setText('⏺ ЗАПИСЬ...')
+        self.compact_status.setStyleSheet("color: #ff6b6b; font-size: 14px; font-weight: bold;")
+
     def on_recording_stopped(self):
         try:
             output_path = self.recorder.save()
+
+            # Показываем уведомление в трее
+            self.tray_icon.showMessage(
+                "✅ Запись сохранена",
+                f"Файл сохранен:\n{os.path.basename(output_path)}",
+                QSystemTrayIcon.Information,
+                3000
+            )
+
             QMessageBox.information(self, '✅ Готово',
                 f'Запись сохранена:\n{output_path}')
         except Exception as e:
@@ -271,17 +585,28 @@ class MainWindow(QMainWindow):
 
         self.start_btn.setEnabled(True)
         self.stop_btn.setEnabled(False)
+        self.stop_compact_btn.setEnabled(False)
+        self.tray_stop_action.setEnabled(False)
+
         self.status_label.setText('✅ Готов к записи')
         self.status_label.setProperty('class', 'ready')
         self.status_label.style().unpolish(self.status_label)
         self.status_label.style().polish(self.status_label)
+
+        self.compact_status.setText('✅ Готов')
+        self.compact_status.setStyleSheet("color: #66bb6a; font-size: 14px; font-weight: bold;")
+
         self.info_label.setText('⏱ 00:00:00 | 📹 0 кадров')
+        self.compact_time.setText('00:00:00')
 
     def on_recording_error(self, error):
         QMessageBox.critical(self, '❌ Ошибка', f'Ошибка записи:\n{error}')
         self.start_btn.setEnabled(True)
         self.stop_btn.setEnabled(False)
+        self.stop_compact_btn.setEnabled(False)
+        self.tray_stop_action.setEnabled(False)
         self.status_label.setText('❌ Ошибка')
+        self.compact_status.setText('❌ Ошибка')
 
     def on_recording_progress(self, data):
         duration = data['duration']
@@ -289,20 +614,61 @@ class MainWindow(QMainWindow):
         minutes = int((duration % 3600) // 60)
         seconds = int(duration % 60)
         time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
         self.info_label.setText(f'⏱ {time_str} | 📹 {data["frames"]} кадров')
+        self.compact_time.setText(time_str)
 
     def update_status(self):
         if self.recorder.is_recording:
             self.status_label.setText('⏺ ИДЕТ ЗАПИСЬ...')
+            self.compact_status.setText('⏺ ЗАПИСЬ...')
 
     def toggle_audio(self, checked):
         self.settings.set('record_audio', checked)
 
     def choose_folder(self):
-        folder = QFileDialog.getExistingDirectory(self, "Выберите папку для сохранения")
+        """Выбор папки через диалог"""
+        # Используем последнюю выбранную папку или текущую
+        start_folder = self.last_folder if self.last_folder else self.settings.get('save_path')
+
+        folder = QFileDialog.getExistingDirectory(
+            self,
+            "Выберите папку для сохранения записей",
+            start_folder,
+            QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks
+        )
+
         if folder:
+            # Сохраняем выбранную папку
+            self.last_folder = folder
             self.folder_path.setText(folder)
             self.settings.set('save_path', folder)
+
+            # Показываем уведомление
+            self.tray_icon.showMessage(
+                "📁 Папка изменена",
+                f"Записи будут сохраняться в:\n{folder}",
+                QSystemTrayIcon.Information,
+                2000
+            )
+
+    def open_save_folder(self):
+        """Открыть папку сохранения в проводнике"""
+        folder = self.settings.get('save_path')
+        if os.path.exists(folder):
+            os.startfile(folder)
+        else:
+            QMessageBox.warning(self, 'Ошибка', f'Папка не существует:\n{folder}')
+
+    def set_default_folder(self):
+        """Установить папку по умолчанию (Рабочий стол)"""
+        default_folder = os.path.join(os.path.expanduser("~"), "Desktop")
+        self.folder_path.setText(default_folder)
+        self.settings.set('save_path', default_folder)
+        self.last_folder = default_folder
+
+        QMessageBox.information(self, '✅ Готово',
+            f'Папка сохранения изменена на:\n{default_folder}')
 
     def on_folder_changed(self, text):
         self.settings.set('save_path', text)
@@ -318,64 +684,24 @@ class MainWindow(QMainWindow):
         self.settings.save()
         QMessageBox.information(self, '✅ Готово', 'Настройки сохранены!')
 
-    def on_overlay_update(self, overlay_image):
-        """Обновление оверлея - теперь ничего не делаем, т.к. захватываем напрямую"""
-        pass  # Убираем, т.к. теперь захватываем напрямую
-
-    def toggle_drawing(self):
-        """Включить/выключить режим рисования"""
-        if not self.drawing_enabled:
-            # Создаем оверлей
-            self.drawing_overlay = DrawingOverlay()
-            self.drawing_overlay.show()
-
-            # Передаем виджет в рекордер
-            self.recorder.set_overlay_widget(self.drawing_overlay)
-
-            # Создаем панель инструментов
-            self.drawing_toolbar = DrawingToolbar(self.drawing_overlay)
-            self.drawing_toolbar.show()
-
-            self.drawing_enabled = True
-            self.draw_btn.setText('🖍️ Скрыть маркер')
-            self.draw_btn.setProperty('class', 'active')
-            self.drawing_info.setText('🖍️ Рисование активно! Используйте мышку для рисования')
-            self.drawing_info.setStyleSheet('color: #4CAF50; font-size: 11px; padding: 5px;')
-        else:
-            # Скрываем
-            if self.drawing_overlay:
-                self.drawing_overlay.hide()
-                self.drawing_overlay = None
-            if self.drawing_toolbar:
-                self.drawing_toolbar.hide()
-                self.drawing_toolbar = None
-
-            self.recorder.set_overlay_widget(None)
-
-            self.drawing_enabled = False
-            self.draw_btn.setText('🖍️ Маркер')
-            self.draw_btn.setProperty('class', '')
-            self.drawing_info.setText('🖍️ Нажмите "Маркер" для активации рисования')
-            self.drawing_info.setStyleSheet('color: #888; font-size: 11px; padding: 5px;')
-
-        self.draw_btn.style().unpolish(self.draw_btn)
-        self.draw_btn.style().polish(self.draw_btn)
-
     def closeEvent(self, event):
-        # Закрываем оверлей если открыт
-        if self.drawing_overlay:
-            self.drawing_overlay.close()
-        if self.drawing_toolbar:
-            self.drawing_toolbar.close()
-
+        """Обработка закрытия окна"""
         if self.recorder.is_recording:
-            reply = QMessageBox.question(self, 'Подтверждение',
-                                         'Запись еще идет. Остановить и выйти?',
-                                         QMessageBox.Yes | QMessageBox.No)
-            if reply == QMessageBox.Yes:
-                self.recorder.stop()
-                event.accept()
-            else:
+            # Если запись идет - сворачиваем в трей вместо закрытия
+            if not self.is_minimized:
+                self.minimize_to_tray()
                 event.ignore()
-        else:
+                return
+
+        # Если запись не идет - можно закрыть
+        reply = QMessageBox.question(
+            self, 'Подтверждение',
+            'Вы уверены, что хотите выйти?',
+            QMessageBox.Yes | QMessageBox.No
+        )
+        if reply == QMessageBox.Yes:
+            if self.recorder.is_recording:
+                self.recorder.stop()
             event.accept()
+        else:
+            event.ignore()

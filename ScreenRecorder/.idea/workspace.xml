@@ -5,24 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="37323b5b-6a88-4b6f-a77e-afa4db21c349" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/../CopyCodeDesctop/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../CopyCodeDesctop/.idea/CopyCodeDesctop.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../CopyCodeDesctop/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../CopyCodeDesctop/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../CopyCodeDesctop/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../CopyCodeDesctop/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../CopyCodeDesctop/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../CopyCodeDesctop/copy_code_gui.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/assets/docs/logo-sr.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/__init__.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/test/test_overlay.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Запись_экрана_2026-28-07_21-03-44TEMP_MPY_wvf_snd.mp4" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/test/test_drawing.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/core/recorder_with_overlay.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/recorder_with_overlay.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/__init__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/recorder.py" beforeDir="false" afterPath="$PROJECT_DIR$/core/recorder.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/core/recorder_with_overlay.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/gui/__init__.py" beforeDir="false" afterPath="$PROJECT_DIR$/gui/__init__.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gui/drawing_overlay.py" beforeDir="false" afterPath="$PROJECT_DIR$/gui/drawing_overlay.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gui/drawing_toolbar.py" beforeDir="false" afterPath="$PROJECT_DIR$/gui/drawing_toolbar.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/gui/main_window.py" beforeDir="false" afterPath="$PROJECT_DIR$/gui/main_window.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gui/modern_styles.py" beforeDir="false" afterPath="$PROJECT_DIR$/gui/modern_styles.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -53,16 +45,16 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "last_opened_file_path": "D:/Tools-&-PyProgs/ScreenRecorder",
-    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;ASKED_SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/Tools-&amp;-PyProgs/ScreenRecorder&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager" selected="Python.main">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="ScreenRecorder" />
@@ -85,6 +77,34 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
+    <configuration name="Python tests for test_overlay.TestWindow" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="ScreenRecorder" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;test_overlay.TestWindow&quot;" />
+      <option name="_new_targetType" value="&quot;PYTHON&quot;" />
+      <method v="2" />
+    </configuration>
+    <configuration name="Python tests in test_drawing.py" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
+      <module name="ScreenRecorder" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$/test" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;$PROJECT_DIR$/../../Tools-\u0026-PyProgs/ScreenRecorder/test/test_drawing.py&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+      <method v="2" />
+    </configuration>
     <configuration name="Python tests in test_overlay.py" type="tests" factoryName="Autodetect" temporary="true" nameIsGenerated="true">
       <module name="ScreenRecorder" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -102,6 +122,8 @@
     <recent_temporary>
       <list>
         <item itemvalue="Python.main" />
+        <item itemvalue="Python tests.Python tests in test_drawing.py" />
+        <item itemvalue="Python tests.Python tests for test_overlay.TestWindow" />
         <item itemvalue="Python tests.Python tests in test_overlay.py" />
       </list>
     </recent_temporary>

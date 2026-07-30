@@ -1,7 +1,6 @@
 """
 Плавающая панель инструментов для рисования
 """
-
 from PyQt5.QtWidgets import (QToolBar, QPushButton, QColorDialog,
                              QSlider, QLabel, QHBoxLayout, QWidget)
 from PyQt5.QtCore import Qt
@@ -18,6 +17,7 @@ class DrawingToolbar(QToolBar):
         self.setMovable(True)
         self.setFloatable(True)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
+
         self.setStyleSheet("""
             QToolBar {
                 background-color: rgba(30, 30, 30, 230);
@@ -75,12 +75,10 @@ class DrawingToolbar(QToolBar):
 
         self.initUI()
         self.move(50, 50)
-
         print("✅ DrawingToolbar создан")
 
     def initUI(self):
         """Создание интерфейса панели"""
-
         container = QWidget()
         layout = QHBoxLayout()
         layout.setSpacing(8)
@@ -172,6 +170,7 @@ class DrawingToolbar(QToolBar):
                 border: 2px solid #888;
             """)
             self.color_btn.setStyleSheet(f"background-color: {color.name()};")
+
             # Если ластик активен, отключаем
             if self.eraser_btn.isChecked():
                 self.eraser_btn.setChecked(False)
@@ -185,15 +184,6 @@ class DrawingToolbar(QToolBar):
     def toggle_eraser(self, checked):
         """Включение/выключение ластика"""
         self.overlay.toggle_eraser(checked)
-        if checked:
-            self.eraser_btn.setStyleSheet("""
-                QPushButton:checked {
-                    background-color: #d32f2f;
-                    border-color: #ff4444;
-                }
-            """)
-        else:
-            self.eraser_btn.setStyleSheet("")
 
     def keyPressEvent(self, event):
         """Обработка клавиш"""
