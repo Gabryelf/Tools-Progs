@@ -1,5 +1,5 @@
 """
-Модуль для обработки аудио и шумоподавления
+Модуль для обработки аудио и шумоподавления - максимально простая версия
 """
 import numpy as np
 from scipy import signal
@@ -7,20 +7,21 @@ import sounddevice as sd
 
 
 class AudioProcessor:
-    """Класс для обработки аудио и удаления шума - упрощенная версия"""
+    """Класс для обработки аудио - только фильтр высоких частот"""
 
     def __init__(self, sample_rate=48000):
         self.sample_rate = sample_rate
-        self.is_initialized = True  # Всегда инициализирован
+        self.is_initialized = True
 
     def capture_noise_profile(self, duration=0.5):
-        """Заглушка - не используется в упрощенной версии"""
-        print("✅ Упрощенный режим шумоподавления")
+        """Заглушка - не используется"""
+        print("✅ Шумоподавление: фильтр высоких частот")
         return True
 
-    def apply_highpass_filter(self, audio_data, cutoff_freq=80):
+    def apply_highpass_filter(self, audio_data, cutoff_freq=100):
         """
-        Простой фильтр высоких частот для удаления низкочастотного гула
+        Простой фильтр высоких частот
+        Убирает низкочастотный гул, сохраняет речь
         """
         try:
             nyquist = self.sample_rate / 2
@@ -29,7 +30,7 @@ class AudioProcessor:
             if normalized_cutoff >= 1.0 or normalized_cutoff <= 0:
                 return audio_data
 
-            # Используем фильтр 2-го порядка для хорошего баланса
+            # Фильтр 2-го порядка - хороший баланс
             b, a = signal.butter(2, normalized_cutoff, btype='high')
 
             # Применяем фильтр
@@ -44,9 +45,3 @@ class AudioProcessor:
         except Exception as e:
             print(f"⚠️ Ошибка применения фильтра: {e}")
             return audio_data
-
-    def remove_noise_simple(self, audio_data):
-        """
-        Простое удаление шума - только фильтр высоких частот
-        """
-        return self.apply_highpass_filter(audio_data, cutoff_freq=80)

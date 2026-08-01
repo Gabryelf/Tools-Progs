@@ -50,7 +50,7 @@ class ScreenRecorder:
         if self.is_recording:
             return
 
-        # Инициализируем обработчик аудио (упрощенный)
+        # Инициализируем обработчик аудио
         if self.settings.get('record_audio'):
             sample_rate = self.settings.get('audio_sample_rate')
             self.audio_processor = AudioProcessor(sample_rate)
@@ -174,6 +174,7 @@ class ScreenRecorder:
             self.audio_data.append(indata.copy())
 
     def _save_audio(self, timestamp: str, video_path: str):
+        """Сохранение аудио с простым фильтром высоких частот"""
         if self.audio_data and self.settings.get('record_audio'):
             try:
                 temp_audio_file = os.path.join(self.temp_dir, f'temp_audio_{timestamp}.wav')
@@ -181,24 +182,22 @@ class ScreenRecorder:
                 # Объединяем аудио
                 audio_array = np.concatenate(self.audio_data, axis=0)
 
-                # Проверяем, включено ли шумоподавление
+                # Шумоподавление - только фильтр высоких частот
                 if self.settings.get('noise_reduction') and self.audio_processor:
-                    try:
-                        print("🔇 Применение фильтра высоких частот...")
+                    print("🔇 Применение фильтра высоких частот...")
 
-                        # Применяем только фильтр высоких частот для удаления гула
-                        audio_array = self.audio_processor.remove_noise_simple(audio_array)
+                    # Применяем фильтр для удаления низкочастотного гула
+                    audio_array = self.audio_processor.apply_highpass_filter(
+                        audio_array,
+                        cutoff_freq=80
+                    )
 
-                        print("✅ Фильтр высоких частот применен")
-                    except Exception as e:
-                        print(f"⚠️ Ошибка шумоподавления: {e}")
-                        # В случае ошибки используем исходное аудио
-                        pass
+                    print("✅ Фильтр применен")
 
-                # Нормализация - сохраняем динамику
+                # Нормализация
                 max_val = np.max(np.abs(audio_array))
                 if max_val > 0.01:
-                    audio_array = audio_array / max_val * 0.95
+                    audio_array = audio_array / max_val * 0.9
 
                 # Сохраняем
                 sf.write(temp_audio_file, audio_array, self.settings.get('audio_sample_rate'))
@@ -212,6 +211,7 @@ class ScreenRecorder:
             self.temp_files = (video_path, None)
 
     def save(self, output_path: str = None):
+        """Быстрое сохранение"""
         if not self.temp_files:
             raise Exception("Нет данных для сохранения")
 
@@ -227,48 +227,68 @@ class ScreenRecorder:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         print(f"\n💾 Сохранение в: {output_path}")
 
-        if (audio_path and os.path.exists(audio_path) and
-                self.settings.get('record_audio') and MOVIEPY_AVAILABLE):
+        has_audio = (audio_path and os.path.exists(audio_path) and
+                    self.settings.get('record_audio'))
+
+        if has_audio and MOVIEPY_AVAILABLE:
             try:
-                print("🔄 Объединение видео и аудио...")
-                video = VideoFileClip(video_path)
-                audio = AudioFileClip(audio_path)
-
-                if audio.duration > video.duration:
-                    audio = audio.subclip(0, video.duration)
-
-                final = video.set_audio(audio)
-                final.write_videofile(output_path,
-                                     codec='libx264',
-                                     audio_codec='aac',
-                                     fps=self.settings.get('video_fps'),
-                                     verbose=False,
-                                     logger=None)
-                video.close()
-                audio.close()
-                final.close()
-
-                try:
-                    os.remove(video_path)
-                    os.remove(audio_path)
-                except:
-                    pass
-
-                print(f"✅ Запись сохранена успешно!")
+                self._save_fast_with_moviepy(video_path, audio_path, output_path)
             except Exception as e:
-                print(f"❌ Ошибка объединения: {e}")
+                print(f"❌ Ошибка сохранения: {e}")
                 print("💾 Сохраняю видео без звука...")
                 shutil.copy2(video_path, output_path)
+                self._cleanup_temp_files(video_path, audio_path)
         else:
             print("💾 Сохраняю видео без звука...")
             shutil.copy2(video_path, output_path)
-
-        try:
-            shutil.rmtree(self.temp_dir)
-        except:
-            pass
+            self._cleanup_temp_files(video_path, audio_path)
 
         return output_path
+
+    def _save_fast_with_moviepy(self, video_path, audio_path, output_path):
+        """Быстрое сохранение через moviepy"""
+        print("🔄 Быстрое объединение видео и аудио...")
+
+        video = VideoFileClip(video_path)
+        audio = AudioFileClip(audio_path)
+
+        if audio.duration > video.duration:
+            audio = audio.subclip(0, video.duration)
+
+        final = video.set_audio(audio)
+
+        # Быстрое сохранение
+        final.write_videofile(
+            output_path,
+            codec='libx264',
+            audio_codec='aac',
+            fps=self.settings.get('video_fps'),
+            preset='ultrafast',
+            bitrate='2000k',
+            audio_bitrate='128k',
+            threads=4,
+            verbose=False,
+            logger=None
+        )
+
+        video.close()
+        audio.close()
+        final.close()
+
+        self._cleanup_temp_files(video_path, audio_path)
+        print(f"✅ Запись сохранена успешно!")
+
+    def _cleanup_temp_files(self, video_path, audio_path=None):
+        """Очистка временных файлов"""
+        try:
+            if audio_path and os.path.exists(audio_path):
+                os.remove(audio_path)
+            if os.path.exists(video_path):
+                os.remove(video_path)
+            if os.path.exists(self.temp_dir):
+                shutil.rmtree(self.temp_dir)
+        except Exception as e:
+            print(f"⚠️ Ошибка очистки временных файлов: {e}")
 
     def _emit(self, event: str, data=None):
         for callback in self.callbacks.get(event, []):

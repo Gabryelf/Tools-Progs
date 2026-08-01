@@ -17,7 +17,7 @@ class RecorderSettings:
     audio_channels: int = 2
     record_audio: bool = True
 
-    # Шумоподавление - упрощенное
+    # Шумоподавление
     noise_reduction: bool = True
 
     # Видео
@@ -71,3 +71,4 @@ class SettingsManager:
         if hasattr(self.settings, key):
             setattr(self.settings, key, value)
             self.save()
+            

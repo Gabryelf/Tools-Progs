@@ -365,11 +365,24 @@ class MainWindow(QMainWindow):
         noise_group = QGroupBox("🔇 Шумоподавление")
         noise_layout = QVBoxLayout()
 
-        self.noise_reduction_check = QCheckBox("Включить фильтр низких частот (убрать гул)")
+        self.noise_reduction_check = QCheckBox("Включить шумоподавление")
         self.noise_reduction_check.setChecked(self.settings.get('noise_reduction'))
         self.noise_reduction_check.toggled.connect(self.toggle_noise_reduction)
         noise_layout.addWidget(self.noise_reduction_check)
 
+        # Информация
+        # info_label = QLabel("💡 Удаляет низкочастотный гул (шум системы охлаждения)")
+        # info_label.setStyleSheet("color: #888888; font-size: 11px; padding: 5px;")
+        # noise_layout.addWidget(info_label)
+
+        # info_label2 = QLabel("✅ Речь и высокие частоты сохраняются")
+        # info_label2.setStyleSheet("color: #66bb6a; font-size: 11px; padding: 5px;")
+        # noise_layout.addWidget(info_label2)
+
+        # Предупреждение
+        # warning_label = QLabel("ℹ️ Первые 0.5 секунды записи используются для анализа шума")
+        # warning_label.setStyleSheet("color: #ffd93d; font-size: 11px; padding: 5px;")
+        # noise_layout.addWidget(warning_label)
 
         noise_group.setLayout(noise_layout)
         audio_settings_layout.addWidget(noise_group)
