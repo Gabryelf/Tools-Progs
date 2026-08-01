@@ -1,8 +1,9 @@
 {
     "audio_device": null,
-    "audio_sample_rate": 22050,
+    "audio_sample_rate": 48000,
     "audio_channels": 2,
     "record_audio": true,
+    "noise_reduction": false,
     "video_fps": 60,
     "video_codec": "mp4v",
     "save_path": "C:\\Users\\elf\\Desktop",

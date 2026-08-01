@@ -20,6 +20,7 @@ except ImportError:
     MOVIEPY_AVAILABLE = False
 
 from .settings import SettingsManager
+from .audio_processor import AudioProcessor
 
 
 class ScreenRecorder:
@@ -33,6 +34,7 @@ class ScreenRecorder:
         self.temp_dir = tempfile.mkdtemp()
         self.temp_files = None
         self.thread = None
+        self.audio_processor = None
         self.callbacks = {
             'on_start': [],
             'on_stop': [],
@@ -47,6 +49,13 @@ class ScreenRecorder:
     def start(self):
         if self.is_recording:
             return
+
+        # Инициализируем обработчик аудио (упрощенный)
+        if self.settings.get('record_audio'):
+            sample_rate = self.settings.get('audio_sample_rate')
+            self.audio_processor = AudioProcessor(sample_rate)
+            print("🔇 Шумоподавление готово (фильтр высоких частот)")
+
         self.is_recording = True
         self.audio_data = []
         self.thread = threading.Thread(target=self._record)
@@ -168,10 +177,34 @@ class ScreenRecorder:
         if self.audio_data and self.settings.get('record_audio'):
             try:
                 temp_audio_file = os.path.join(self.temp_dir, f'temp_audio_{timestamp}.wav')
+
+                # Объединяем аудио
                 audio_array = np.concatenate(self.audio_data, axis=0)
+
+                # Проверяем, включено ли шумоподавление
+                if self.settings.get('noise_reduction') and self.audio_processor:
+                    try:
+                        print("🔇 Применение фильтра высоких частот...")
+
+                        # Применяем только фильтр высоких частот для удаления гула
+                        audio_array = self.audio_processor.remove_noise_simple(audio_array)
+
+                        print("✅ Фильтр высоких частот применен")
+                    except Exception as e:
+                        print(f"⚠️ Ошибка шумоподавления: {e}")
+                        # В случае ошибки используем исходное аудио
+                        pass
+
+                # Нормализация - сохраняем динамику
+                max_val = np.max(np.abs(audio_array))
+                if max_val > 0.01:
+                    audio_array = audio_array / max_val * 0.95
+
+                # Сохраняем
                 sf.write(temp_audio_file, audio_array, self.settings.get('audio_sample_rate'))
                 self.temp_files = (video_path, temp_audio_file)
                 print(f"🎵 Аудио сохранено: {len(audio_array)} семплов")
+
             except Exception as e:
                 print(f"⚠️ Ошибка сохранения аудио: {e}")
                 self.temp_files = (video_path, None)

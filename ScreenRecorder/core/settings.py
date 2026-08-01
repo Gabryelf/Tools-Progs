@@ -2,7 +2,6 @@
 """
 Модуль для работы с настройками
 """
-
 import json
 import os
 from dataclasses import dataclass, asdict
@@ -14,9 +13,12 @@ class RecorderSettings:
     """Настройки записи"""
     # Звук
     audio_device: Optional[int] = None
-    audio_sample_rate: int = 44100
+    audio_sample_rate: int = 48000
     audio_channels: int = 2
     record_audio: bool = True
+
+    # Шумоподавление - упрощенное
+    noise_reduction: bool = True
 
     # Видео
     video_fps: int = 20
@@ -69,4 +71,3 @@ class SettingsManager:
         if hasattr(self.settings, key):
             setattr(self.settings, key, value)
             self.save()
-
