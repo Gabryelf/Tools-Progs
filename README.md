@@ -45,9 +45,9 @@
 
 #### Скриншоты
 
-| Главное окно | Настройки | Описание |
+| Главное окно | Процесс записи | Результат |
 |--------------|----------------|-----------|
-| ![Main Window](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-08-01_22-19-08.png) | ![Recording](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-08-01_22-20-10.png) | ![Saved](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-08-01_22-58-26.png) |
+| ![Main Window](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-24-56.png) | ![Recording](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-25-47.png) | ![Saved](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-26-01.png) |
 
 #### Технологии
 
