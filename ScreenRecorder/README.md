@@ -34,6 +34,12 @@
 |--------------|----------------|-----------|
 | ![Main Window](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-24-56.png) | ![Recording](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-25-47.png) | ![Saved](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-26-01.png) |
 
+#### Версия 0.0.4
+
+| Главное окно | Настройки | Описание |
+|--------------|----------------|-----------|
+| ![Main Window](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-08-01_22-19-08.png) | ![Recording](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-08-01_22-20-10.png) | ![Saved](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-08-01_22-58-26.png) |
+
 #### Технологии
 
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
