@@ -2,22 +2,38 @@
 Главное окно приложения с поддержкой системного трея
 """
 import os
-from PyQt5.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-                             QPushButton, QLabel, QMessageBox, QFileDialog,
-                             QGroupBox, QCheckBox, QComboBox, QSpinBox,
-                             QLineEdit, QTabWidget, QSystemTrayIcon, QMenu,
-                             QAction, QApplication, QFileDialog, QSlider)
+import logging
+from pathlib import Path
+
+from PyQt5.QtWidgets import (
+    QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
+    QPushButton, QLabel, QMessageBox, QFileDialog,
+    QGroupBox, QCheckBox, QComboBox, QSpinBox,
+    QLineEdit, QTabWidget, QSystemTrayIcon, QMenu,
+    QAction, QApplication, QSlider
+)
 from PyQt5.QtCore import Qt, QTimer, QSize
-from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor, QPen, QFont
+from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor, QPen
+
 from core import SettingsManager, ScreenRecorder
 from gui.modern_styles import DARK_STYLE
+from constants import APP_NAME, APP_VERSION, WINDOW_WIDTH, WINDOW_HEIGHT, MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT
+
+logger = logging.getLogger(__name__)
 
 
 class MainWindow(QMainWindow):
+    """Главное окно приложения"""
+
     def __init__(self):
         super().__init__()
         self.settings = SettingsManager()
         self.recorder = ScreenRecorder(self.settings)
+
+        # Устанавливаем иконку окна
+        from constants import ICON_PATH
+        if ICON_PATH.exists():
+            self.setWindowIcon(QIcon(str(ICON_PATH)))
 
         # Подключаем callback'и
         self.recorder.add_callback('on_start', self.on_recording_started)
@@ -35,10 +51,12 @@ class MainWindow(QMainWindow):
 
         self.initUI()
         self.create_tray_icon()
+        logger.info("Главное окно инициализировано")
 
     def initUI(self):
-        self.setWindowTitle('🎥 Screen Recorder')
-        self.setGeometry(100, 100, 450, 650)
+        """Инициализация интерфейса"""
+        self.setWindowTitle(f'🎥 {APP_NAME}')
+        self.setGeometry(100, 100, WINDOW_WIDTH, WINDOW_HEIGHT)
         self.setMinimumSize(400, 600)
         self.setStyleSheet(DARK_STYLE)
 
@@ -143,7 +161,7 @@ class MainWindow(QMainWindow):
         widget.setLayout(layout)
 
         # Заголовок
-        title = QLabel('🎥 Screen Recorder')
+        title = QLabel(f'🎥 {APP_NAME}')
         title.setObjectName('titleLabel')
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
@@ -371,18 +389,17 @@ class MainWindow(QMainWindow):
         noise_layout.addWidget(self.noise_reduction_check)
 
         # Информация
-        # info_label = QLabel("💡 Удаляет низкочастотный гул (шум системы охлаждения)")
+        # info_label = QLabel("💡 Убирает низкочастотный гул (шум кулера, гудение)")
         # info_label.setStyleSheet("color: #888888; font-size: 11px; padding: 5px;")
         # noise_layout.addWidget(info_label)
 
-        # info_label2 = QLabel("✅ Речь и высокие частоты сохраняются")
+        # info_label2 = QLabel("✅ Речь и высокие звуки полностью сохраняются")
         # info_label2.setStyleSheet("color: #66bb6a; font-size: 11px; padding: 5px;")
         # noise_layout.addWidget(info_label2)
 
-        # Предупреждение
-        # warning_label = QLabel("ℹ️ Первые 0.5 секунды записи используются для анализа шума")
-        # warning_label.setStyleSheet("color: #ffd93d; font-size: 11px; padding: 5px;")
-        # noise_layout.addWidget(warning_label)
+        # info_label3 = QLabel("ℹ️ Частота среза: 80 Гц")
+        # info_label3.setStyleSheet("color: #888888; font-size: 11px; padding: 5px;")
+        # noise_layout.addWidget(info_label3)
 
         noise_group.setLayout(noise_layout)
         audio_settings_layout.addWidget(noise_group)
@@ -416,21 +433,20 @@ class MainWindow(QMainWindow):
         about_tab = QWidget()
         about_layout = QVBoxLayout()
         about_tab.setLayout(about_layout)
-        about_text = QLabel("""
-        <h2>🎥 Screen Recorder</h2>
-        <p><b>Версия:</b> 0.0.4</p>
+        about_text = QLabel(f"""
+        <h2>🎥 {APP_NAME}</h2>
+        <p><b>Версия:</b> {APP_VERSION}</p>
         <p><b>Автор:</b> Gabryelf</p>
         <p>Запись экрана с системным звуком</p>
         <p>История версий и возможности приложения:</p>
         <ul>
             <li>v0.0.1 Основной интерфейс и сохранение записи</li>
             <li>v0.0.2 Настройки приложения и запись звука</li>
-            <li>v0.0.3 Функия минимизации интерфейса и скрытия в трей</li>
+            <li>v0.0.3 Функция минимизации интерфейса и скрытия в трей</li>
             <li>v0.0.4 Возможность шумоподавления записи звука</li>
         </ul>
         <p>Git Hub: </p>
         <p>https://github.com/Gabryelf/Tools-Progs/tree/main/ScreenRecorder</p>
-        
         """)
         about_text.setAlignment(Qt.AlignCenter)
         about_layout.addWidget(about_text)
@@ -507,7 +523,7 @@ class MainWindow(QMainWindow):
 
         # Показываем уведомление
         self.tray_icon.showMessage(
-            "Screen Recorder",
+            APP_NAME,
             "Приложение свернуто в трей. Запись продолжается.",
             QSystemTrayIcon.Information,
             2000
@@ -520,9 +536,9 @@ class MainWindow(QMainWindow):
         self.full_widget.show()
 
         # Возвращаем нормальный размер
-        self.setFixedHeight(650)
-        self.setFixedWidth(450)
-        self.setMinimumSize(400, 600)
+        self.setFixedHeight(WINDOW_HEIGHT)
+        self.setFixedWidth(WINDOW_WIDTH)
+        self.setMinimumSize(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT)
         self.show()
         self.activateWindow()
 
@@ -556,11 +572,13 @@ class MainWindow(QMainWindow):
             QApplication.quit()
 
     def start_recording(self):
+        """Начать запись"""
         if self.recorder.is_recording:
             return
         self.recorder.start()
 
     def stop_recording(self):
+        """Остановить запись"""
         if not self.recorder.is_recording:
             return
 
@@ -580,6 +598,7 @@ class MainWindow(QMainWindow):
         self.recorder.stop()
 
     def on_recording_started(self):
+        """Обработка начала записи"""
         self.start_btn.setEnabled(False)
         self.stop_btn.setEnabled(True)
         self.stop_compact_btn.setEnabled(True)
@@ -594,6 +613,7 @@ class MainWindow(QMainWindow):
         self.compact_status.setStyleSheet("color: #ff6b6b; font-size: 14px; font-weight: bold;")
 
     def on_recording_stopped(self):
+        """Обработка остановки записи"""
         try:
             output_path = self.recorder.save()
             # Показываем уведомление в трее
@@ -606,6 +626,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, '✅ Готово',
                 f'Запись сохранена:\n{output_path}')
         except Exception as e:
+            logger.error(f"Ошибка сохранения: {e}")
             QMessageBox.critical(self, '❌ Ошибка',
                 f'Не удалось сохранить запись:\n{str(e)}')
 
@@ -626,6 +647,8 @@ class MainWindow(QMainWindow):
         self.compact_time.setText('00:00:00')
 
     def on_recording_error(self, error):
+        """Обработка ошибки записи"""
+        logger.error(f"Ошибка записи: {error}")
         QMessageBox.critical(self, '❌ Ошибка', f'Ошибка записи:\n{error}')
         self.start_btn.setEnabled(True)
         self.stop_btn.setEnabled(False)
@@ -635,6 +658,7 @@ class MainWindow(QMainWindow):
         self.compact_status.setText('❌ Ошибка')
 
     def on_recording_progress(self, data):
+        """Обработка прогресса записи"""
         duration = data['duration']
         hours = int(duration // 3600)
         minutes = int((duration % 3600) // 60)
@@ -644,31 +668,20 @@ class MainWindow(QMainWindow):
         self.compact_time.setText(time_str)
 
     def update_status(self):
+        """Обновление статуса"""
         if self.recorder.is_recording:
             self.status_label.setText('⏺ ИДЕТ ЗАПИСЬ...')
             self.compact_status.setText('⏺ ЗАПИСЬ...')
 
     def toggle_audio(self, checked):
+        """Включение/выключение записи звука"""
         self.settings.set('record_audio', checked)
+        logger.info(f"Запись звука: {'включена' if checked else 'выключена'}")
 
     def toggle_noise_reduction(self, checked):
         """Включение/выключение шумоподавления"""
         self.settings.set('noise_reduction', checked)
-        print(f"🔇 Шумоподавление: {'включено' if checked else 'выключено'}")
-
-    def on_noise_strength_changed(self, value):
-        """Изменение силы шумоподавления"""
-        self.noise_strength_label.setText(f"{value}%")
-        strength = value / 100.0
-        self.settings.set('noise_reduction_strength', strength)
-        print(f"🔇 Сила шумоподавления: {strength:.2f}")
-
-    def on_gate_threshold_changed(self, value):
-        """Изменение порога шумового гейта"""
-        threshold = value / 1000.0
-        self.gate_label.setText(f"{threshold:.3f}")
-        self.settings.set('noise_gate_threshold', threshold)
-        print(f"🔇 Порог гейта: {threshold:.3f}")
+        logger.info(f"Шумоподавление: {'включено' if checked else 'выключено'}")
 
     def choose_folder(self):
         """Выбор папки через диалог"""
@@ -683,6 +696,7 @@ class MainWindow(QMainWindow):
             self.last_folder = folder
             self.folder_path.setText(folder)
             self.settings.set('save_path', folder)
+            logger.info(f"Папка сохранения изменена: {folder}")
             self.tray_icon.showMessage(
                 "📁 Папка изменена",
                 f"Записи будут сохраняться в:\n{folder}",
@@ -704,20 +718,23 @@ class MainWindow(QMainWindow):
         self.folder_path.setText(default_folder)
         self.settings.set('save_path', default_folder)
         self.last_folder = default_folder
+        logger.info(f"Папка сохранения сброшена на: {default_folder}")
         QMessageBox.information(self, '✅ Готово',
             f'Папка сохранения изменена на:\n{default_folder}')
 
-    def on_folder_changed(self, text):
-        self.settings.set('save_path', text)
-
     def on_fps_changed(self, value):
+        """Изменение FPS"""
         self.settings.set('video_fps', value)
+        logger.info(f"FPS изменен: {value}")
 
     def on_sample_rate_changed(self, text):
+        """Изменение частоты дискретизации"""
         rate = float(text) * 1000
         self.settings.set('audio_sample_rate', int(rate))
+        logger.info(f"Частота дискретизации изменена: {rate}")
 
     def save_settings(self):
+        """Сохранение настроек"""
         self.settings.save()
         QMessageBox.information(self, '✅ Готово', 'Настройки сохранены!')
 
@@ -737,6 +754,7 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.Yes:
             if self.recorder.is_recording:
                 self.recorder.stop()
+            logger.info("Приложение закрыто")
             event.accept()
         else:
             event.ignore()
