@@ -9,15 +9,12 @@ from PyQt5.QtGui import QColor
 
 class DrawingToolbar(QToolBar):
     """Плавающая панель инструментов"""
-
     def __init__(self, overlay, parent=None):
         super().__init__("Инструменты рисования", parent)
         self.overlay = overlay
-
         self.setMovable(True)
         self.setFloatable(True)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint)
-
         self.setStyleSheet("""
             QToolBar {
                 background-color: rgba(30, 30, 30, 230);
@@ -72,7 +69,6 @@ class DrawingToolbar(QToolBar):
                 background: #00aaff;
             }
         """)
-
         self.initUI()
         self.move(50, 50)
         print("✅ DrawingToolbar создан")
@@ -100,7 +96,6 @@ class DrawingToolbar(QToolBar):
             border: 2px solid #888;
         """)
         layout.addWidget(self.color_indicator)
-
         layout.addWidget(QLabel("|"))
 
         # Толщина кисти
@@ -111,12 +106,10 @@ class DrawingToolbar(QToolBar):
         self.size_slider.setToolTip("Толщина кисти")
         self.size_slider.valueChanged.connect(self.on_size_changed)
         layout.addWidget(self.size_slider)
-
         self.size_label = QLabel("5")
         self.size_label.setFixedWidth(25)
         self.size_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(self.size_label)
-
         layout.addWidget(QLabel("|"))
 
         # Кнопка ластика
@@ -137,7 +130,6 @@ class DrawingToolbar(QToolBar):
         self.clear_btn.setToolTip("Очистить все")
         self.clear_btn.clicked.connect(self.overlay.clear_drawing)
         layout.addWidget(self.clear_btn)
-
         layout.addWidget(QLabel("|"))
 
         # Кнопка скрыть
@@ -170,7 +162,6 @@ class DrawingToolbar(QToolBar):
                 border: 2px solid #888;
             """)
             self.color_btn.setStyleSheet(f"background-color: {color.name()};")
-
             # Если ластик активен, отключаем
             if self.eraser_btn.isChecked():
                 self.eraser_btn.setChecked(False)
