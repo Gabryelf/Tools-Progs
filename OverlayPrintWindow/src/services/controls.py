@@ -4,67 +4,62 @@ from PyQt5.QtGui import QColor
 
 class Controller:
     def __init__(self, window):
-        """
-        Конструктор контроллера
-
-        Args:
-            window: Ссылка на окно (OverlayWindow)
-        """
         self.window = window
 
     def handle_key_press(self, event):
-        """
-        Обработка нажатий клавиш клавиатуры
+        """Обработка нажатий клавиш"""
+        key = event.key()
+        modifiers = event.modifiers()
 
-        Args:
-            event: Событие клавиатуры
-        """
-        if event.key() == Qt.Key_Escape:
-            # Закрыть программу
-            self.window.close()
+        # Выход
+        if key == Qt.Key_Escape:
+            if self.window.is_drawing_mode:
+                self.window.toggle_drawing_mode()
+            else:
+                self.window.close()
 
-        elif event.key() == Qt.Key_C:
-            # Очистить все линии
-            self.window.lines.clear()
-            self.window.update()
-            print("Все линии очищены")
+        # Справка
+        elif key == Qt.Key_F1:
+            self.window.show_help()
 
-        elif event.key() == Qt.Key_R:
-            # Красный цвет
-            self.window.pen_color = QColor(255, 0, 0, 200)
-            print("Цвет изменен на красный")
+        # Включить/выключить режим рисования
+        elif key == Qt.Key_F2:
+            self.window.toggle_drawing_mode()
 
-        elif event.key() == Qt.Key_G:
-            # Зеленый цвет
-            self.window.pen_color = QColor(0, 255, 0, 200)
-            print("Цвет изменен на зеленый")
+        # Пауза
+        elif key == Qt.Key_F3:
+            self.window.toggle_pause()
 
-        elif event.key() == Qt.Key_B:
-            # Синий цвет
-            self.window.pen_color = QColor(0, 0, 255, 200)
-            print("Цвет изменен на синий")
+        # Очистка
+        elif key == Qt.Key_C:
+            self.window.clear_all()
 
-        elif event.key() == Qt.Key_Y:
-            # Желтый цвет
-            self.window.pen_color = QColor(255, 255, 0, 200)
-            print("Цвет изменен на желтый")
+        # Отмена
+        elif key == Qt.Key_Z and modifiers & Qt.ControlModifier:
+            self.window.undo_last()
 
-        elif event.key() == Qt.Key_1:
-            # Толщина 3
-            self.window.pen_width = 3
-            print(f"Толщина линии: {self.window.pen_width}")
-
-        elif event.key() == Qt.Key_2:
-            # Толщина 5
-            self.window.pen_width = 5
-            print(f"Толщина линии: {self.window.pen_width}")
-
-        elif event.key() == Qt.Key_3:
-            # Толщина 10
-            self.window.pen_width = 10
-            print(f"Толщина линии: {self.window.pen_width}")
-
-        elif event.key() == Qt.Key_4:
-            # Толщина 20
-            self.window.pen_width = 20
-            print(f"Толщина линии: {self.window.pen_width}")
+        # Цвета
+        elif key == Qt.Key_R:
+            self.window.change_color(QColor(255, 0, 0, 255), "Красный")
+        elif key == Qt.Key_G:
+            self.window.change_color(QColor(0, 255, 0, 255), "Зеленый")
+        elif key == Qt.Key_B:
+            self.window.change_color(QColor(0, 0, 255, 255), "Синий")
+        elif key == Qt.Key_Y:
+            self.window.change_color(QColor(255, 255, 0, 255), "Желтый")
+        elif key == Qt.Key_P:
+            self.window.change_color(QColor(255, 0, 255, 255), "Розовый")
+        elif key == Qt.Key_O:
+            self.window.change_color(QColor(255, 165, 0, 255), "Оранжевый")
+        elif key == Qt.Key_W:
+            self.window.change_color(QColor(255, 255, 255, 255), "Белый")
+        elif key == Qt.Key_1:
+            self.window.change_width(3)
+        elif key == Qt.Key_2:
+            self.window.change_width(5)
+        elif key == Qt.Key_3:
+            self.window.change_width(10)
+        elif key == Qt.Key_4:
+            self.window.change_width(15)
+        elif key == Qt.Key_5:
+            self.window.change_width(25)
