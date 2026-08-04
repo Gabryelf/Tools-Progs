@@ -110,6 +110,36 @@
 
 ---
 
+### ✏️ Overlay Marker
+
+> Приложение для презентаций, демонстраций и быстрых заметок прямо на рабочем столе.
+
+#### Возможности
+- ✅ Рисование в любом месте экрана
+- 🎨 7 цветов для выбора
+- 📏 Регулируемая толщина линии (1-20px)
+- 🗑️ Очистка всех линий и отмена последнего действия
+- 🎯 Полная блокировка мыши в режиме рисования
+- 📌 Работает поверх всех окон
+- 🔄 Сворачивание в системный трей
+- ⚡ Минималистичный интерфейс с иконками
+
+#### Скриншоты v0.0.3
+
+| Панель управления | Режим рисования | Возможности |
+|-------------------|-----------------|------|
+| ![Control Panel](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/overlay_win/2026-08-04_22-06-40.png) | ![Drawing](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/overlay_win/2026-08-04_22-11-00.png) | ![Tray](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/overlay_win/2026-08-04_22-14-29.png) |
+
+#### Технологии
+
+![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
+![PyQt5](https://img.shields.io/badge/PyQt5-41CD52?style=flat&logo=qt&logoColor=white)
+![pynput](https://img.shields.io/badge/pynput-0078D4?style=flat&logo=python&logoColor=white)
+
+#### 📖 [Подробная документация →](https://github.com/Gabryelf/Tools-Progs/blob/main/OverlayPrintWindow/README.md)
+
+---
+
 ## Использование наработок
 
 ### 1. Клонирование репозитория
