@@ -1,21 +1,28 @@
+"""Точка входа в приложение"""
+
 import sys
 from PyQt5.QtWidgets import QApplication
-
 from src.core.overlay_window import OverlayWindow
-from src.services.controls import Controller
-from src.ui.menu_manager import GuiManager
+from src.ui.control_panel import ControlPanel
 
 
-class Main:
+class Application:
     def __init__(self):
         self.app = QApplication(sys.argv)
-        self.window = OverlayWindow()
-        self.gui = GuiManager()
-        self.controller = Controller(self.window)
-        self.window.set_controller(self.controller)
-        self.gui.show_start_menu()
+        self.app.setQuitOnLastWindowClosed(False)
+        self.app.setApplicationName("Overlay Marker")
+
+        # Создаем оверлей
+        self.overlay = OverlayWindow()
+
+        # Создаем панель управления
+        self.panel = ControlPanel(self.overlay)
+        self.panel.show()
+
+    def run(self):
         sys.exit(self.app.exec_())
 
 
 if __name__ == "__main__":
-    main_app = Main()
+    app = Application()
+    app.run()
