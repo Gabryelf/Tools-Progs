@@ -11,6 +11,7 @@ from src.ui.mini_panel import MiniPanel
 from src.utils.constants import COLORS, PANEL_WIDTH, PANEL_HEIGHT
 from src.core.drawing_engine import DrawingMode
 
+
 class ControlPanel(QMainWindow):
     def __init__(self, overlay):
         super().__init__()
@@ -179,14 +180,14 @@ class ControlPanel(QMainWindow):
         header_layout.setContentsMargins(0, 0, 0, 0)
 
         # Иконка и название
-        title = QLabel("✏️ Маркер")
+        title = QLabel("📝 Overlay Marker")
         title.setStyleSheet("font-size: 14px; font-weight: bold;")
         header_layout.addWidget(title)
         header_layout.addStretch()
 
         # Кнопка минимизации
         mini_btn = QPushButton("━")
-        mini_btn.setFixedSize(24, 24)
+        mini_btn.setFixedSize(36, 36)
         mini_btn.setStyleSheet("""
             QPushButton {
                 background: transparent;
@@ -203,7 +204,7 @@ class ControlPanel(QMainWindow):
 
         # Кнопка закрытия
         close_btn = QPushButton("✕")
-        close_btn.setFixedSize(24, 24)
+        close_btn.setFixedSize(36, 36)
         close_btn.setStyleSheet("""
             QPushButton {
                 background: transparent;
@@ -586,10 +587,21 @@ class ControlPanel(QMainWindow):
 
     def close_app(self):
         """Закрытие приложения"""
-        self.overlay.set_drawing_mode(False)
-        self.overlay.close()
-        self.mini_panel.close()
-        self.tray.hide()
+        try:
+            if self.overlay:
+                self.overlay.set_drawing_mode(False)
+                self.overlay.close()
+        except:
+            pass
+        try:
+            if self.mini_panel:
+                self.mini_panel.close()
+        except:
+            pass
+        try:
+            self.tray.hide()
+        except:
+            pass
         self.close()
 
     def closeEvent(self, event):
