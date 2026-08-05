@@ -2,6 +2,8 @@
 
 Простое и элегантное приложение для рисования поверх экрана. Идеально подходит для презентаций, демонстраций и быстрых заметок прямо на рабочем столе.
 
+[![Скачать EXE](https://img.shields.io/badge/⬇️_Overlay_Marker_App_v0.0.4-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Gabryelf/Tools-Progs/tree/main/OverlayPrintWindow/dist/OverlayMarker.exe)
+
 > [!NOTE]
 > Изначально идея была реализовать данный функционал в приложении ScreenRecorder, но что бы не перегружать логику
 > сделал отдельно. Полностью задача будет реализована когда можно будет добавить шаблоны и функции
