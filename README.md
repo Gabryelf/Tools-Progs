@@ -136,6 +136,9 @@
 ![PyQt5](https://img.shields.io/badge/PyQt5-41CD52?style=flat&logo=qt&logoColor=white)
 ![pynput](https://img.shields.io/badge/pynput-0078D4?style=flat&logo=python&logoColor=white)
 
+[![Скачать EXE](https://img.shields.io/badge/⬇️_Overlay_Marker_App_v0.0.4-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Gabryelf/Tools-Progs/tree/main/OverlayPrintWindow/dist/OverlayMarker.exe)
+
+
 #### 📖 [Подробная документация →](https://github.com/Gabryelf/Tools-Progs/blob/main/OverlayPrintWindow/README.md)
 
 ---
