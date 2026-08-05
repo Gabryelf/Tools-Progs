@@ -1,5 +1,7 @@
+"""Блокировка ввода (для будущих расширений)"""
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
+from src.core.drawing_engine import DrawingMode
 
 
 class Controller:
@@ -13,53 +15,70 @@ class Controller:
 
         # Выход
         if key == Qt.Key_Escape:
-            if self.window.is_drawing_mode:
+            if self.window.engine.is_active:
                 self.window.toggle_drawing_mode()
             else:
                 self.window.close()
 
         # Справка
         elif key == Qt.Key_F1:
-            self.window.show_help()
+            self.show_help()
 
-        # Включить/выключить режим рисования
+        # Режим рисования
         elif key == Qt.Key_F2:
             self.window.toggle_drawing_mode()
 
-        # Пауза
-        elif key == Qt.Key_F3:
-            self.window.toggle_pause()
+        # Затухание
+        elif key == Qt.Key_F4:
+            self.window.toggle_fading()
+
+        # Режимы рисования
+        elif key == Qt.Key_F:
+            self.window.set_drawing_mode_type(DrawingMode.FREE)
+        elif key == Qt.Key_L:
+            self.window.set_drawing_mode_type(DrawingMode.LINE)
+        elif key == Qt.Key_R:
+            self.window.set_drawing_mode_type(DrawingMode.RECTANGLE)
+        elif key == Qt.Key_C:
+            self.window.set_drawing_mode_type(DrawingMode.CIRCLE)
+        elif key == Qt.Key_T:
+            self.window.set_drawing_mode_type(DrawingMode.TRIANGLE)
 
         # Очистка
-        elif key == Qt.Key_C:
+        elif key == Qt.Key_Delete:
             self.window.clear_all()
 
         # Отмена
         elif key == Qt.Key_Z and modifiers & Qt.ControlModifier:
-            self.window.undo_last()
+            self.window.undo()
 
         # Цвета
-        elif key == Qt.Key_R:
-            self.window.change_color(QColor(255, 0, 0, 255), "Красный")
-        elif key == Qt.Key_G:
-            self.window.change_color(QColor(0, 255, 0, 255), "Зеленый")
-        elif key == Qt.Key_B:
-            self.window.change_color(QColor(0, 0, 255, 255), "Синий")
-        elif key == Qt.Key_Y:
-            self.window.change_color(QColor(255, 255, 0, 255), "Желтый")
-        elif key == Qt.Key_P:
-            self.window.change_color(QColor(255, 0, 255, 255), "Розовый")
-        elif key == Qt.Key_O:
-            self.window.change_color(QColor(255, 165, 0, 255), "Оранжевый")
-        elif key == Qt.Key_W:
-            self.window.change_color(QColor(255, 255, 255, 255), "Белый")
-        elif key == Qt.Key_1:
-            self.window.change_width(3)
-        elif key == Qt.Key_2:
-            self.window.change_width(5)
-        elif key == Qt.Key_3:
-            self.window.change_width(10)
-        elif key == Qt.Key_4:
-            self.window.change_width(15)
-        elif key == Qt.Key_5:
-            self.window.change_width(25)
+        elif key in [Qt.Key_1, Qt.Key_2, Qt.Key_3, Qt.Key_4,
+                     Qt.Key_5, Qt.Key_6, Qt.Key_7, Qt.Key_8]:
+            colors = [(255, 50, 50), (50, 255, 50), (50, 150, 255),
+                      (255, 255, 50), (200, 50, 255), (255, 150, 50),
+                      (255, 255, 255), (255, 100, 200)]
+            idx = key - Qt.Key_1
+            if 0 <= idx < len(colors):
+                rgb = colors[idx]
+                self.window.set_color(QColor(*rgb, 255))
+
+    def show_help(self):
+        """Показать справку"""
+        print("""
+        Горячие клавиши:
+        F2 - Режим рисования
+        F4 - Затухание линий
+        ESC - Выход из режима / сворачивание
+
+        Режимы рисования:
+        F - Свободное рисование
+        L - Прямая линия
+        R - Прямоугольник
+        C - Круг
+        T - Треугольник
+
+        Цвета: 1-8
+        Delete - Очистить все
+        Ctrl+Z - Отменить
+        """)

@@ -1,5 +1,4 @@
 """Константы приложения"""
-
 # Цвета
 COLORS = {
     'red': (255, 50, 50),
@@ -22,9 +21,26 @@ DEFAULT_PEN = {
 # Размеры панели
 PANEL_WIDTH = 320
 PANEL_HEIGHT = 420
+MINI_PANEL_WIDTH = 180
+MINI_PANEL_HEIGHT = 45
 
 # Горячие клавиши
 HOTKEYS = {
     'toggle_mode': 'F2',
-    'exit': 'ESC'
+    'exit': 'ESC',
+    'fade': 'F4',
+    'free': 'F',
+    'line': 'L',
+    'rectangle': 'R',
+    'circle': 'C',
+    'triangle': 'T',
 }
+
+# Настройки затухания
+FADING = {
+    'enabled': False,
+    'delay': 3.0,  # Секунд до начала затухания
+    'fade_duration': 3.0,  # Секунд на затухание
+}
+
+APP_NAME = "Overlay Marker"
