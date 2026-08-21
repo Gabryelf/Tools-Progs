@@ -47,7 +47,7 @@
 
 | Главное окно | Процесс записи | Результат |
 |--------------|----------------|-----------|
-| ![Main Window](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-24-56.png) | ![Recording](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-25-47.png) | ![Saved](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-07-28_15-26-01.png) |
+| ![Main Window](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-08-01_22-19-08.png) | ![Recording](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-08-01_22-20-10.png) | ![Saved](https://github.com/Gabryelf/Tools-Progs/blob/main/docs/screens/screen_rec/2026-08-01_22-58-26.png) |
 
 #### Технологии
 
@@ -135,6 +135,9 @@
 ![Python](https://img.shields.io/badge/Python-3776AB?style=flat&logo=python&logoColor=white)
 ![PyQt5](https://img.shields.io/badge/PyQt5-41CD52?style=flat&logo=qt&logoColor=white)
 ![pynput](https://img.shields.io/badge/pynput-0078D4?style=flat&logo=python&logoColor=white)
+
+[![Скачать EXE](https://img.shields.io/badge/⬇️_Overlay_Marker_App_v0.0.4-0078D4?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/Gabryelf/Tools-Progs/tree/main/OverlayPrintWindow/dist/OverlayMarker.exe)
+
 
 #### 📖 [Подробная документация →](https://github.com/Gabryelf/Tools-Progs/blob/main/OverlayPrintWindow/README.md)
 
