@@ -3,8 +3,8 @@
 """
 import os
 import logging
+import threading
 from pathlib import Path
-
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QMessageBox, QFileDialog,
@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
     QLineEdit, QTabWidget, QSystemTrayIcon, QMenu,
     QAction, QApplication, QSlider
 )
-from PyQt5.QtCore import Qt, QTimer, QSize
+from PyQt5.QtCore import Qt, QTimer, QSize, QEvent
 from PyQt5.QtGui import QIcon, QPixmap, QPainter, QColor, QPen
 
 from core import SettingsManager, ScreenRecorder
@@ -22,9 +22,27 @@ from constants import APP_NAME, APP_VERSION, WINDOW_WIDTH, WINDOW_HEIGHT, MIN_WI
 logger = logging.getLogger(__name__)
 
 
+# Кастомные события для уведомлений из потоков
+class ShowSaveNotification(QEvent):
+    """Событие для уведомления о сохранении"""
+    EVENT_TYPE = QEvent.Type(QEvent.registerEventType())
+
+    def __init__(self, output_path):
+        super().__init__(ShowSaveNotification.EVENT_TYPE)
+        self.output_path = output_path
+
+
+class ShowErrorNotification(QEvent):
+    """Событие для уведомления об ошибке"""
+    EVENT_TYPE = QEvent.Type(QEvent.registerEventType())
+
+    def __init__(self, error_message):
+        super().__init__(ShowErrorNotification.EVENT_TYPE)
+        self.error_message = error_message
+
+
 class MainWindow(QMainWindow):
     """Главное окно приложения"""
-
     def __init__(self):
         super().__init__()
         self.settings = SettingsManager()
@@ -51,7 +69,73 @@ class MainWindow(QMainWindow):
 
         self.initUI()
         self.create_tray_icon()
+
+        # Устанавливаем обработчик кастомных событий
+        self.installEventFilter(self)
+
         logger.info("Главное окно инициализировано")
+
+    def eventFilter(self, obj, event):
+        """Обработка кастомных событий"""
+        if event.type() == ShowSaveNotification.EVENT_TYPE:
+            self._show_save_notification(event.output_path)
+            return True
+        elif event.type() == ShowErrorNotification.EVENT_TYPE:
+            self._show_error_notification(event.error_message)
+            return True
+        return super().eventFilter(obj, event)
+
+    def _show_save_notification(self, output_path):
+        """Показать уведомление о сохранении"""
+        try:
+            # Показываем уведомление в трее
+            self.tray_icon.showMessage(
+                "✅ Запись сохранена",
+                f"Файл сохранен:\n{os.path.basename(output_path)}",
+                QSystemTrayIcon.Information,
+                3000
+            )
+
+            QMessageBox.information(
+                self,
+                '✅ Готово',
+                f'Запись сохранена:\n{output_path}'
+            )
+        except Exception as e:
+            logger.error(f"Ошибка показа уведомления: {e}")
+
+        # Восстанавливаем кнопки
+        self.start_btn.setEnabled(True)
+        self.stop_btn.setEnabled(False)
+        self.stop_compact_btn.setEnabled(False)
+        self.tray_stop_action.setEnabled(False)
+
+        self.status_label.setText('✅ Готов к записи')
+        self.status_label.setProperty('class', 'ready')
+        self.status_label.style().unpolish(self.status_label)
+        self.status_label.style().polish(self.status_label)
+
+        self.compact_status.setText('✅ Готов')
+        self.compact_status.setStyleSheet("color: #66bb6a; font-size: 14px; font-weight: bold;")
+        self.info_label.setText('⏱ 00:00:00 | 📹 0 кадров')
+        self.compact_time.setText('00:00:00')
+
+    def _show_error_notification(self, error_message):
+        """Показать уведомление об ошибке"""
+        logger.error(f"Ошибка сохранения: {error_message}")
+
+        QMessageBox.critical(
+            self,
+            '❌ Ошибка',
+            f'Не удалось сохранить запись:\n{error_message}'
+        )
+
+        self.start_btn.setEnabled(True)
+        self.stop_btn.setEnabled(False)
+        self.stop_compact_btn.setEnabled(False)
+        self.tray_stop_action.setEnabled(False)
+        self.status_label.setText('❌ Ошибка')
+        self.compact_status.setText('❌ Ошибка')
 
     def initUI(self):
         """Инициализация интерфейса"""
@@ -122,6 +206,7 @@ class MainWindow(QMainWindow):
                 font-weight: bold;
             }
         """)
+
         layout = QHBoxLayout()
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(10)
@@ -130,12 +215,14 @@ class MainWindow(QMainWindow):
         self.compact_status = QLabel('⏺ ЗАПИСЬ...')
         self.compact_status.setStyleSheet("color: #ff6b6b; font-size: 14px; font-weight: bold;")
         layout.addWidget(self.compact_status)
+
         layout.addStretch()
 
         # Время записи
         self.compact_time = QLabel('00:00:00')
         self.compact_time.setStyleSheet("color: #888888; font-size: 14px;")
         layout.addWidget(self.compact_time)
+
         layout.addStretch()
 
         # Кнопка остановить
@@ -190,6 +277,7 @@ class MainWindow(QMainWindow):
 
         # Кнопки управления
         btn_layout = QHBoxLayout()
+
         self.start_btn = QPushButton('▶ Начать запись')
         self.start_btn.setObjectName('startBtn')
         self.start_btn.clicked.connect(self.start_recording)
@@ -200,6 +288,7 @@ class MainWindow(QMainWindow):
         self.stop_btn.clicked.connect(self.stop_recording)
         self.stop_btn.setEnabled(False)
         btn_layout.addWidget(self.stop_btn)
+
         record_layout.addLayout(btn_layout)
 
         # Кнопка свернуть в трей
@@ -236,8 +325,8 @@ class MainWindow(QMainWindow):
 
         settings_group.setLayout(settings_layout)
         record_layout.addWidget(settings_group)
-        record_layout.addStretch()
 
+        record_layout.addStretch()
         tabs.addTab(record_tab, "🎬 Запись")
 
         # ============ Вкладка "Настройки" ============
@@ -388,19 +477,6 @@ class MainWindow(QMainWindow):
         self.noise_reduction_check.toggled.connect(self.toggle_noise_reduction)
         noise_layout.addWidget(self.noise_reduction_check)
 
-        # Информация
-        # info_label = QLabel("💡 Убирает низкочастотный гул (шум кулера, гудение)")
-        # info_label.setStyleSheet("color: #888888; font-size: 11px; padding: 5px;")
-        # noise_layout.addWidget(info_label)
-
-        # info_label2 = QLabel("✅ Речь и высокие звуки полностью сохраняются")
-        # info_label2.setStyleSheet("color: #66bb6a; font-size: 11px; padding: 5px;")
-        # noise_layout.addWidget(info_label2)
-
-        # info_label3 = QLabel("ℹ️ Частота среза: 80 Гц")
-        # info_label3.setStyleSheet("color: #888888; font-size: 11px; padding: 5px;")
-        # noise_layout.addWidget(info_label3)
-
         noise_group.setLayout(noise_layout)
         audio_settings_layout.addWidget(noise_group)
 
@@ -425,14 +501,15 @@ class MainWindow(QMainWindow):
         """)
         save_btn.clicked.connect(self.save_settings)
         settings_layout.addWidget(save_btn)
-        settings_layout.addStretch()
 
+        settings_layout.addStretch()
         tabs.addTab(settings_tab, "⚙️ Настройки")
 
         # ============ Вкладка "О программе" ============
         about_tab = QWidget()
         about_layout = QVBoxLayout()
         about_tab.setLayout(about_layout)
+
         about_text = QLabel(f"""
         <h2>🎥 {APP_NAME}</h2>
         <p><b>Версия:</b> {APP_VERSION}</p>
@@ -444,6 +521,7 @@ class MainWindow(QMainWindow):
             <li>v0.0.2 Настройки приложения и запись звука</li>
             <li>v0.0.3 Функция минимизации интерфейса и скрытия в трей</li>
             <li>v0.0.4 Возможность шумоподавления записи звука</li>
+            <li>v0.0.5 Исправлена проблема обрезанной записи при сохранении</li>
         </ul>
         <p>Git Hub: </p>
         <p>https://github.com/Gabryelf/Tools-Progs/tree/main/ScreenRecorder</p>
@@ -490,6 +568,7 @@ class MainWindow(QMainWindow):
         size = 64
         pixmap = QPixmap(size, size)
         pixmap.fill(Qt.transparent)
+
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
 
@@ -507,8 +586,8 @@ class MainWindow(QMainWindow):
         painter.setBrush(QColor(200, 50, 50))
         painter.setPen(Qt.NoPen)
         painter.drawEllipse(50, 8, 10, 10)
-        painter.end()
 
+        painter.end()
         return QIcon(pixmap)
 
     def minimize_to_tray(self):
@@ -595,7 +674,23 @@ class MainWindow(QMainWindow):
         self.compact_status.setText('⏳ СОХРАНЕНИЕ...')
         self.compact_status.setStyleSheet("color: #ffd93d; font-size: 14px; font-weight: bold;")
 
-        self.recorder.stop()
+        # Запускаем остановку в отдельном потоке, чтобы UI не зависал
+        def stop_and_save():
+            try:
+                # Останавливаем запись и ждем завершения
+                self.recorder.stop()
+
+                # Сохраняем
+                output_path = self.recorder.save()
+
+                # Показываем уведомление в основном потоке
+                QApplication.postEvent(self, ShowSaveNotification(output_path))
+
+            except Exception as e:
+                logger.error(f"Ошибка сохранения: {e}")
+                QApplication.postEvent(self, ShowErrorNotification(str(e)))
+
+        threading.Thread(target=stop_and_save, daemon=True).start()
 
     def on_recording_started(self):
         """Обработка начала записи"""
@@ -613,49 +708,15 @@ class MainWindow(QMainWindow):
         self.compact_status.setStyleSheet("color: #ff6b6b; font-size: 14px; font-weight: bold;")
 
     def on_recording_stopped(self):
-        """Обработка остановки записи"""
-        try:
-            output_path = self.recorder.save()
-            # Показываем уведомление в трее
-            self.tray_icon.showMessage(
-                "✅ Запись сохранена",
-                f"Файл сохранен:\n{os.path.basename(output_path)}",
-                QSystemTrayIcon.Information,
-                3000
-            )
-            QMessageBox.information(self, '✅ Готово',
-                f'Запись сохранена:\n{output_path}')
-        except Exception as e:
-            logger.error(f"Ошибка сохранения: {e}")
-            QMessageBox.critical(self, '❌ Ошибка',
-                f'Не удалось сохранить запись:\n{str(e)}')
-
-        self.start_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
-        self.stop_compact_btn.setEnabled(False)
-        self.tray_stop_action.setEnabled(False)
-
-        self.status_label.setText('✅ Готов к записи')
-        self.status_label.setProperty('class', 'ready')
-        self.status_label.style().unpolish(self.status_label)
-        self.status_label.style().polish(self.status_label)
-
-        self.compact_status.setText('✅ Готов')
-        self.compact_status.setStyleSheet("color: #66bb6a; font-size: 14px; font-weight: bold;")
-
-        self.info_label.setText('⏱ 00:00:00 | 📹 0 кадров')
-        self.compact_time.setText('00:00:00')
+        """Обработка остановки записи (вызывается из колбэка)"""
+        # UI восстанавливается через уведомления из потока
+        # Этот метод вызывается до завершения сохранения
+        pass
 
     def on_recording_error(self, error):
         """Обработка ошибки записи"""
         logger.error(f"Ошибка записи: {error}")
-        QMessageBox.critical(self, '❌ Ошибка', f'Ошибка записи:\n{error}')
-        self.start_btn.setEnabled(True)
-        self.stop_btn.setEnabled(False)
-        self.stop_compact_btn.setEnabled(False)
-        self.tray_stop_action.setEnabled(False)
-        self.status_label.setText('❌ Ошибка')
-        self.compact_status.setText('❌ Ошибка')
+        QApplication.postEvent(self, ShowErrorNotification(str(error)))
 
     def on_recording_progress(self, data):
         """Обработка прогресса записи"""
@@ -664,6 +725,7 @@ class MainWindow(QMainWindow):
         minutes = int((duration % 3600) // 60)
         seconds = int(duration % 60)
         time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+
         self.info_label.setText(f'⏱ {time_str} | 📹 {data["frames"]} кадров')
         self.compact_time.setText(time_str)
 

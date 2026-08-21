@@ -6,7 +6,7 @@ from pathlib import Path
 
 # Информация о приложении
 APP_NAME = "Screen Recorder"
-APP_VERSION = "0.0.5"
+APP_VERSION = "0.0.6"
 APP_AUTHOR = "Gabryelf"
 APP_DESCRIPTION = "Запись экрана с системным звуком"
 APP_COPYRIGHT = f"Copyright © {APP_AUTHOR} 2026"

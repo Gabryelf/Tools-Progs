@@ -10,7 +10,6 @@ import os
 from pathlib import Path
 from datetime import datetime
 from typing import Optional, Dict, List, Callable, Tuple, Any
-
 import cv2
 import numpy as np
 import sounddevice as sd
@@ -27,7 +26,6 @@ from .settings import SettingsManager
 from .audio_processor import AudioProcessor
 
 logger = logging.getLogger(__name__)
-
 
 class RecorderEvents:
     """Типы событий для колбэков"""
@@ -46,7 +44,6 @@ class ScreenRecorder:
         is_recording: Флаг состояния записи
         callbacks: Словарь с колбэками
     """
-
     def __init__(self, settings: Optional[SettingsManager] = None):
         self.settings = settings or SettingsManager()
         self._is_recording = False
@@ -63,6 +60,12 @@ class ScreenRecorder:
             RecorderEvents.ON_ERROR: [],
             RecorderEvents.ON_PROGRESS: []
         }
+
+        # Новые атрибуты для синхронизации
+        self._stop_event = threading.Event()
+        self._save_ready = threading.Event()
+        self._recording_result = None
+        self._frame_count = 0
 
     @property
     def is_recording(self) -> bool:
@@ -98,6 +101,9 @@ class ScreenRecorder:
 
         self._is_recording = True
         self._audio_data = []
+        self._frame_count = 0
+        self._stop_event.clear()
+        self._save_ready.clear()
 
         self._thread = threading.Thread(target=self._record_loop)
         self._thread.daemon = True
@@ -111,16 +117,32 @@ class ScreenRecorder:
         if not self._is_recording:
             return None
 
+        self._stop_event.set()
         self._is_recording = False
+
+        # Ждем завершения потока записи
         if self._thread:
-            self._thread.join(timeout=5)
+            self._thread.join(timeout=10)
+            self._thread = None
+
+        # Ждем готовности к сохранению
+        if not self._save_ready.wait(timeout=10):
+            logger.warning("Таймаут ожидания готовности к сохранению (10 сек)")
 
         self._emit(RecorderEvents.ON_STOP)
         logger.info("Запись остановлена")
+
         return self._temp_files
+
+    def is_save_ready(self) -> bool:
+        """Проверка готовности к сохранению"""
+        return self._save_ready.is_set()
 
     def _record_loop(self) -> None:
         """Основной цикл записи"""
+        self._save_ready.clear()
+        temp_video_file = None
+
         try:
             screen_width, screen_height = pyautogui.size()
             timestamp = datetime.now().strftime("%Y-%d-%m_%H-%M-%S")
@@ -131,6 +153,9 @@ class ScreenRecorder:
                 temp_video_file, screen_width, screen_height
             )
 
+            logger.info(f"VideoWriter создан: {temp_video_file}")
+            logger.info(f"Размер видео: {screen_width}x{screen_height}")
+
             # Настройка аудио
             if self.settings.get('record_audio'):
                 self._audio_stream = self._setup_audio_stream()
@@ -139,14 +164,16 @@ class ScreenRecorder:
             start_time = time.time()
             last_progress_time = start_time
 
-            logger.info(f"Запись экрана: {screen_width}x{screen_height}")
+            logger.info(f"Начало записи экрана: {screen_width}x{screen_height}")
 
-            while self._is_recording:
+            # Основной цикл записи
+            while self._is_recording and not self._stop_event.is_set():
                 try:
                     frame = self._capture_frame()
                     if frame is not None:
                         self._video_writer.write(frame)
                         frame_count += 1
+                        self._frame_count = frame_count
 
                     # Обновление прогресса
                     current_time = time.time()
@@ -161,41 +188,60 @@ class ScreenRecorder:
                         last_progress_time = current_time
 
                     time.sleep(0.001)
+
                 except Exception as e:
                     logger.error(f"Ошибка в цикле записи: {e}")
                     self._emit(RecorderEvents.ON_ERROR, str(e))
                     break
 
-            # Остановка аудио
+            logger.info(f"Цикл записи завершен. Записано кадров: {frame_count}")
+
+            # ====== ВАЖНО: ЗАКРЫВАЕМ ВСЕ РЕСУРСЫ ДО СОХРАНЕНИЯ ======
+
+            # 1. Закрываем аудио поток
             if self._audio_stream:
-                self._audio_stream.stop()
-                self._audio_stream.close()
+                try:
+                    self._audio_stream.stop()
+                    self._audio_stream.close()
+                    logger.info("Аудио поток закрыт")
+                except Exception as e:
+                    logger.error(f"Ошибка закрытия аудио потока: {e}")
                 self._audio_stream = None
 
-            # Освобождение видео
+            # 2. Закрываем VideoWriter (ОБЯЗАТЕЛЬНО!)
             if self._video_writer:
-                self._video_writer.release()
+                try:
+                    self._video_writer.release()
+                    logger.info(f"VideoWriter освобожден. Размер файла: {os.path.getsize(temp_video_file)} байт")
+                except Exception as e:
+                    logger.error(f"Ошибка освобождения VideoWriter: {e}")
                 self._video_writer = None
 
-            # Сохранение аудио
+            # 3. Небольшая пауза для завершения всех операций ввода-вывода
+            time.sleep(0.5)
+
+            # 4. Сохраняем аудио
+            timestamp = datetime.now().strftime("%Y-%d-%m_%H-%M-%S")
             self._save_audio(timestamp, temp_video_file)
 
-            logger.info("Запись завершена")
+            # 5. Сигнализируем, что можно сохранять
+            self._save_ready.set()
+
+            logger.info(f"Запись завершена. Видео: {temp_video_file}")
 
         except Exception as e:
             logger.error(f"Ошибка записи: {e}")
             self._emit(RecorderEvents.ON_ERROR, str(e))
             self._is_recording = False
+            self._save_ready.set()  # Даже при ошибке освобождаем блокировку
 
     def _create_video_writer(self, path: str, width: int, height: int) -> cv2.VideoWriter:
         """Создание VideoWriter"""
         fourcc = cv2.VideoWriter_fourcc(*'XVID')
         fps = self.settings.get('video_fps')
         writer = cv2.VideoWriter(path, fourcc, fps, (width, height))
-
         if not writer.isOpened():
             raise RuntimeError("Не удалось создать VideoWriter")
-
         return writer
 
     def _capture_frame(self) -> Optional[np.ndarray]:
@@ -240,7 +286,6 @@ class ScreenRecorder:
         """Поиск аудио устройства"""
         try:
             devices = sd.query_devices()
-
             # Поиск loopback устройств
             for i, dev in enumerate(devices):
                 if dev['max_input_channels'] > 0:
@@ -248,13 +293,11 @@ class ScreenRecorder:
                     if any(k in name for k in ['loopback', 'stereo mix', 'what u hear']):
                         logger.info(f"Найдено устройство: {dev['name']}")
                         return i
-
             # Если loopback не найден, берем устройство по умолчанию
             default_device = sd.default.device[0]
             if default_device is not None:
                 logger.info(f"Использую устройство по умолчанию: {default_device}")
                 return default_device
-
         except Exception as e:
             logger.error(f"Ошибка поиска устройства: {e}")
         return None
@@ -278,12 +321,12 @@ class ScreenRecorder:
 
             # Объединение блоков
             audio_array = np.concatenate(self._audio_data, axis=0)
+            logger.info(f"Аудио данные: {len(audio_array)} семплов, форма: {audio_array.shape}")
 
             # Шумоподавление
             if (self.settings.get('noise_reduction') and
                 self._audio_processor and
                 self._audio_processor.is_initialized):
-
                 logger.info("Применение фильтра высоких частот...")
                 cutoff = self.settings.get('highpass_cutoff', 80)
                 audio_array = self._audio_processor.apply_highpass_filter(
@@ -298,8 +341,7 @@ class ScreenRecorder:
             # Сохранение
             sf.write(temp_audio_file, audio_array, self.settings.get('audio_sample_rate'))
             self._temp_files = (video_path, temp_audio_file)
-
-            logger.info(f"Аудио сохранено: {len(audio_array)} семплов")
+            logger.info(f"Аудио сохранено: {temp_audio_file}, размер: {len(audio_array)} семплов")
 
         except Exception as e:
             logger.error(f"Ошибка сохранения аудио: {e}")
@@ -315,17 +357,31 @@ class ScreenRecorder:
         Returns:
             Путь к сохраненному файлу
         """
+        # Дожидаемся готовности
+        if not self._save_ready.wait(timeout=10):
+            logger.warning("Принудительное сохранение без ожидания готовности")
+
         if not self._temp_files:
             raise RuntimeError("Нет данных для сохранения")
 
         video_path, audio_path = self._temp_files
+
+        # Проверяем, что видео-файл существует
+        if not os.path.exists(video_path):
+            raise RuntimeError(f"Видео-файл не найден: {video_path}")
+
+        # Проверяем, что файл не пустой
+        video_size = os.path.getsize(video_path)
+        if video_size < 1000:  # Меньше 1KB
+            raise RuntimeError(f"Видео-файл слишком мал: {video_size} байт")
+
+        logger.info(f"Видео-файл готов: {video_path}, размер: {video_size} байт")
 
         if output_path is None:
             output_path = self._generate_output_path()
 
         # Создание директории
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
         logger.info(f"Сохранение в: {output_path}")
 
         # Проверка наличия аудио
@@ -336,7 +392,7 @@ class ScreenRecorder:
             try:
                 self._save_with_moviepy(video_path, audio_path, output_path)
             except Exception as e:
-                logger.error(f"Ошибка сохранения: {e}")
+                logger.error(f"Ошибка сохранения с moviepy: {e}")
                 self._save_video_only(video_path, output_path)
         else:
             self._save_video_only(video_path, output_path)
@@ -356,36 +412,51 @@ class ScreenRecorder:
         """Сохранение через moviepy"""
         logger.info("Объединение видео и аудио через moviepy...")
 
-        video = VideoFileClip(video_path)
-        audio = AudioFileClip(audio_path)
+        video = None
+        audio = None
+        final = None
 
-        if audio.duration > video.duration:
-            audio = audio.subclip(0, video.duration)
+        try:
+            video = VideoFileClip(video_path)
+            logger.info(f"Видео загружено: длительность {video.duration} сек, размер {video.size}")
 
-        final = video.set_audio(audio)
-        final.write_videofile(
-            output_path,
-            codec='libx264',
-            audio_codec='aac',
-            fps=self.settings.get('video_fps'),
-            preset='ultrafast',
-            bitrate='2000k',
-            audio_bitrate='128k',
-            threads=4,
-            verbose=False,
-            logger=None
-        )
+            audio = AudioFileClip(audio_path)
+            logger.info(f"Аудио загружено: длительность {audio.duration} сек")
 
-        video.close()
-        audio.close()
-        final.close()
+            if audio.duration > video.duration:
+                audio = audio.subclip(0, video.duration)
+                logger.info(f"Аудио обрезано до {video.duration} сек")
 
-        logger.info("Запись сохранена успешно")
+            final = video.set_audio(audio)
+
+            final.write_videofile(
+                output_path,
+                codec='libx264',
+                audio_codec='aac',
+                fps=self.settings.get('video_fps'),
+                preset='ultrafast',
+                bitrate='2000k',
+                audio_bitrate='128k',
+                threads=4,
+                verbose=False,
+                logger=None
+            )
+            logger.info(f"Запись сохранена: {output_path}, размер: {os.path.getsize(output_path)} байт")
+
+        finally:
+            # Закрываем все клипы
+            if video:
+                video.close()
+            if audio:
+                audio.close()
+            if final:
+                final.close()
 
     def _save_video_only(self, video_path: str, output_path: str) -> None:
         """Сохранение только видео"""
         logger.info("Сохранение видео без звука...")
         shutil.copy2(video_path, output_path)
+        logger.info(f"Видео сохранено: {output_path}, размер: {os.path.getsize(output_path)} байт")
 
     def _cleanup_temp_files(self) -> None:
         """Очистка временных файлов"""
@@ -394,12 +465,13 @@ class ScreenRecorder:
                 video_path, audio_path = self._temp_files
                 if audio_path and os.path.exists(audio_path):
                     os.remove(audio_path)
+                    logger.info(f"Удален временный аудио-файл: {audio_path}")
                 if os.path.exists(video_path):
                     os.remove(video_path)
-
+                    logger.info(f"Удален временный видео-файл: {video_path}")
             if os.path.exists(self._temp_dir):
                 shutil.rmtree(self._temp_dir)
-
+                logger.info(f"Удалена временная папка: {self._temp_dir}")
         except Exception as e:
             logger.warning(f"Ошибка очистки временных файлов: {e}")
 
