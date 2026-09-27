@@ -5,7 +5,7 @@
 
 
 import config
-from utils import check_confirm
+from utils import check_confirm, ensure_save_file
 from core import create_task, edited_task, deleated_task
 from storage import save_collection, load_collection
 from view import show_collection, show_message
@@ -14,6 +14,7 @@ from view import show_collection, show_message
 
 
 def app():
+    ensure_save_file()
     name_file = config.NAME_FILE_SAVES
     collection = load_collection([], name_file)
     is_running = True
