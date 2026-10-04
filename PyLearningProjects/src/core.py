@@ -3,7 +3,7 @@
     =============================================================
 """
 
-from view import show_message, show_collection
+from ui.view import show_message, show_collection
 from storage import save_collection
 from utils import check_confirm
 

@@ -8,7 +8,7 @@ import config
 from utils import check_confirm, ensure_save_file
 from core import create_task, edited_task, deleated_task
 from storage import save_collection, load_collection
-from view import show_collection, show_message
+from ui.view import show_collection, show_message
 
 """основной цикл приложения"""
 
