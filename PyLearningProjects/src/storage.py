@@ -1,24 +1,30 @@
 """ =========================================================
-        Модуль для сохранения и загрузки задач в файл
+        Сохранение и загрузка задач в JSON.
     =========================================================
 """
+import json
+from config import NAME_FILE_SAVES
 
-"""загрузка"""
 
-
-def load_collection(task_list, file_name):
+def load_collection(file_name=NAME_FILE_SAVES):
+    """Загрузить список задач из файла. Возвращает list[dict]."""
     with open(file_name, "r", encoding="utf-8") as file:
-        for line in file:
-            task_list.append(line.strip())
-        file.close()
-    return task_list
+        try:
+            data = json.load(file)
+        except json.JSONDecodeError:
+            return []
+
+    result = []
+    for item in data:
+        if isinstance(item, dict):
+            result.append({
+                "name": item.get("name", ""),
+                "content": item.get("content", ""),
+            })
+    return result
 
 
-"""сохранение"""
-
-
-def save_collection(task_list, file_name):
-    with open(file_name, 'w', encoding='utf-8') as file:
-        for task in task_list:
-            file.writelines(f"{task}\n")
-        file.close()
+def save_collection(collection, file_name=NAME_FILE_SAVES):
+    """Сохранить список задач в файл."""
+    with open(file_name, "w", encoding="utf-8") as file:
+        json.dump(collection, file, ensure_ascii=False, indent=2)

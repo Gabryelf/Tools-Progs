@@ -7,12 +7,9 @@ class AppButton(tk.Button):
             master,
             text=text,
             command=command,
-            width=16,
-            height=1,
-            bg="#333333",
-            fg="#ffffff",
+            fg="#020202",
             activebackground="#555555",
             activeforeground="#ffffff",
-            font=("Arial", 11),
+            font=("Arial", 11, 'bold'),
             **kwargs
         )
