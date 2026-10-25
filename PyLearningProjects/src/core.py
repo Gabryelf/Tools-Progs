@@ -1,43 +1,55 @@
-""" =============================================================
-        Модуль для основных функциональных методов приложения
-    =============================================================
-"""
-
-from view import show_message, show_collection
-from storage import save_collection
-from utils import check_confirm
-
-"""содзание задач"""
+import sys
+from PySide6 import QtWidgets, QtCore
+from storage import load_collection, save_collection
+from config import NAME_FILE_SAVES
 
 
-def create_task(task_list, file):
-    name_task = input("введите имя задачи")
-    if len(name_task) > 0 and name_task not in task_list and name_task is not None:
-        content_task = input("введите описание задачи")
-        if content_task is not None and len(content_task) >= 1:
-            full_task = f"{name_task} {content_task}"
-            task_list.append(full_task)
-            save_collection(task_list, file_name=file)
-            show_message(message=name_task, mess_action='добавлена')
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Task Manager")
+        self.resize(500, 400)
+
+        self.collection = load_collection(NAME_FILE_SAVES)
+
+        central_widget = QtWidgets.QWidget()
+        self.setCentralWidget(central_widget)
+        layout = QtWidgets.QVBoxLayout(central_widget)
+
+        self.list_widget = QtWidgets.QListWidget()
+        self.btn_show = QtWidgets.QPushButton("Посмотреть задачи")
+        self.btn_add = QtWidgets.QPushButton("Добавить задачу")
+        self.btn_quit = QtWidgets.QPushButton("Выход")
+
+        layout.addWidget(self.list_widget)
+        layout.addWidget(self.btn_show)
+        layout.addWidget(self.btn_add)
+        layout.addWidget(self.btn_quit)
+
+        self.btn_show.clicked.connect(self.show_all_tasks)
+        self.btn_add.clicked.connect(self.add_task)
+        self.btn_quit.clicked.connect(self.close)
+
+        self.refresh_list()
+
+    def refresh_list(self):
+        self.list_widget.clear()
+        for task in self.collection:
+            self.list_widget.addItem(task["name"])
+
+    def show_all_tasks(self):
+        self.refresh_list()
+
+    def add_task(self):
+        text, ok = QtWidgets.QInputDialog.getText(self, "Новая задача", "Введите задачу:")
+        if ok and text:
+            self.collection.append(text)
+            save_collection(self.collection, NAME_FILE_SAVES)
+            self.refresh_list()
 
 
-"""изменение задачи"""
-
-
-def edited_task(task_list):
-    show_collection(task_list)
-    select_edit = int(input('введите номер задачи: '))
-    edit_name = input("новое имя задачи: ")
-    task_list[select_edit - 1] = edit_name
-    show_message(message=edit_name, mess_action='измененна')
-
-
-"""удаление элемента"""
-
-
-def deleated_task(task_list):
-    delete_edit = int(input('введите номер задачи: '))
-    if not check_confirm('удаление выполненно'):
-        task_list.pop(delete_edit - 1)
-    show_collection(task_list)
-    show_message(message=delete_edit, mess_action="удалена")
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
