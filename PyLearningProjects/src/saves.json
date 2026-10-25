@@ -1,0 +1,20 @@
+[
+  {
+    "name": "created test task",
+    "content": "add test task on new interface versio 0.1.4",
+    "icon": "📝",
+    "author": "—"
+  },
+  {
+    "name": "completed test",
+    "content": "add second task do collection",
+    "icon": "📝",
+    "author": "—"
+  },
+  {
+    "name": "добавил задачу для теста",
+    "content": "не всплывало окно с иконкой и автором",
+    "icon": "⭐",
+    "author": "Эльф"
+  }
+]

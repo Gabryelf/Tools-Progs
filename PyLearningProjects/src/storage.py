@@ -7,7 +7,7 @@ from config import NAME_FILE_SAVES
 
 
 def load_collection(file_name=NAME_FILE_SAVES):
-    """Загрузить список задач из файла. Возвращает list[dict]."""
+
     with open(file_name, "r", encoding="utf-8") as file:
         try:
             data = json.load(file)
@@ -20,6 +20,8 @@ def load_collection(file_name=NAME_FILE_SAVES):
             result.append({
                 "name": item.get("name", ""),
                 "content": item.get("content", ""),
+                "icon": item.get("icon", "📝"),
+                "author": item.get("author", "—"),
             })
     return result
 

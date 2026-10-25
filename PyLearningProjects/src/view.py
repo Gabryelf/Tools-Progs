@@ -29,9 +29,37 @@ def show_all_tasks():
 
     listbox = ui.add_listbox()
     for index, task in enumerate(collection):
-        listbox.insert("end", f"{index + 1}. {task['name']}")
+        icon = task.get("icon", "📝")
+        listbox.insert("end", f"{icon} {task['name']}")
+
+    def on_select(event):
+        selection = listbox.curselection()
+        if not selection:
+            return
+        index = selection[0]
+        show_task_details(index)
+
+    listbox.bind("<Double-Button-1>", on_select)
 
     ui.add_button("В меню", command=show_menu)
+
+    def show_task_details(index):
+        task = collection[index]
+        icon = task.get("icon", "📝")
+        author = task.get("author", "—")
+        content = task.get("content", "")
+
+        ui.show_details(
+            title=f"Задача: {task['name']}",
+            lines=[
+                f"{icon}  {task['name']}",
+                "",
+                "Содержание:",
+                content if content else "(пусто)",
+                "",
+                f"Автор: {author}",
+            ],
+        )
 
 
 def show_add():
@@ -50,7 +78,28 @@ def show_add():
         if not name:
             ui.show_warning("Внимание", "Имя не может быть пустым")
             return
-        collection.append({"name": name, "content": desc})
+
+        # иконка
+        icon = ui.ask_choice(
+            "Иконка задачи",
+            "Выберите иконку:",
+            ["📝", "🥛", "🍞", "🛒", "⭐", "🔥", "💡", "📌"],
+        )
+        if icon is None:
+            return  # отменили — не создаём
+
+        # автор
+        author = ui.ask_string("Автор", "Введите автора:", default="—")
+        if author is None:
+            return
+        author = author.strip() or "—"
+
+        collection.append({
+            "name": name,
+            "content": desc,
+            "icon": icon,
+            "author": author,
+        })
         save_collection(collection)
         show_all_tasks()
 
